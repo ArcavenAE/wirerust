@@ -116,3 +116,18 @@ Prior checkpoints archived to `cycles/feature-iec104/session-checkpoints.md` and
 **Superseded by:** D-563 STORY-185 DELIVERED checkpoint (current, see STATE.md). F4 per-story TDD delivery, noted as the next step above, delivered STORY-185 (PR #467, e0ea30ce, human-executed merge) this burst.
 
 ---
+
+## Session Resume Checkpoint (2026-09-07) — D-563 STORY-185 DELIVERED
+
+**D-563 STORY-185 DELIVERED — PR #467 squash-merged to develop as e0ea30ce (human-executed merge; develop 7ce0db5c→e0ea30ce). Per-story adversarial CONVERGED 3/3 in 5 passes; pr-reviewer APPROVE cycle 1, security CLEAN, CI 13/13. STORY-INDEX.md v4.26→v4.27 (status column + wave-88 delivery-progress row; totals unchanged 147/97/863). Two accepted residuals logged to cycles/feature-s7comm/lessons.md (regression-guard-comment NIT; PG-CANONICAL-HOLDOUT-NOT-AC-ENFORCED recurrence #2). PG-MERGE-CLASSIFIER-F4 operating arrangement recorded. develop=`e0ea30ce`, main=`46ebd6e3` (unchanged), `stories_delivered`=122. Pipeline IN-PROGRESS — F4 delta-implementation now 2/11 delivered. RESUME: `/vsdd-factory:rehydrate-wave` then `/vsdd-factory:next-step`.**
+
+- **Date:** 2026-09-07. Position: mode=feature-s7comm, IN-PROGRESS; F1 APPROVED (D-557) + F2 COMPLETE + gate APPROVED (D-559); F3 COMPLETE + gate APPROVED (D-560/D-561); F4 delta-implementation IN PROGRESS (D-561/D-562/D-563) — STORY-184+185 DELIVERED (waves 87-88), 2 of 11 stories; NEXT = STORY-186 (wave 89, ISO-on-TCP carry-buffer reassembly + flow-map lifecycle).
+- **Convergence counter:** N/A — not in an adversarial/convergence loop (STORY-185's per-story loop closed CONVERGED 3/3; STORY-186's loop not yet dispatched).
+- **In-flight work:** none mid-TDD; no open story worktrees (STORY-185 worktree/branch cleaned up post-merge). This burst delivered STORY-185 (PR #467, `develop` `e0ea30ce`, human-executed merge). Deferred human PRs unchanged from D-556: #451 (DEFERRED, DIRTY/conflicting + policy contradiction); #407 (`CHANGES_REQUESTED` posted, OPEN awaiting contributor response).
+- **Pending human decisions / blockers:** none blocking STORY-186 dispatch. #451 rebase + policy-contradiction resolution; #407 contributor response — both carried forward, unaffected by this burst. PG-MERGE-CLASSIFIER-F4 means the next story merge (STORY-186) again requires a human-executed `gh pr merge`, not agent-dispatched. STATE.md remains NEEDS-COMPACT — a `/compact-state` pass is advisable before the next burst (not performed this burst).
+- **WIP branch list:** none.
+- **Resume command:** `/vsdd-factory:rehydrate-wave` then `/vsdd-factory:next-step`.
+
+**Superseded by:** SESSION-WRAP-PAUSE-2026-09-07 (D-564) checkpoint (current, see STATE.md). Factory paused per human wrap request after this burst; STORY-186 worktree created (clean baseline, no code) but per-story TDD delivery not yet dispatched.
+
+---
