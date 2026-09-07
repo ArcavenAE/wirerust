@@ -155,8 +155,8 @@ without SS-20 ever having S7comm-specific knowledge baked into its parsing logic
 - `src/analyzer/iso_on_tcp.rs` contains no reference to the literals `0x32`/`0x72` nor
   the strings "S7comm"/"S7comm-plus" anywhere in its parsing logic (traces to
   BC-2.20.012 postcondition 3)
-- **Test:** `test_BC_2_20_012_protocol_id_extraction_totality` (proptest sweep over all
-  256 `u8` values) and a static regression-guard test asserting zero occurrences of
+- **Test:** `test_BC_2_20_012_protocol_id_extraction_totality` (exhaustive `#[test]`
+  loop over all 256 `u8` values (0..=255)) and a static regression-guard test asserting zero occurrences of
   `0x32`/`0x72` literals in `src/analyzer/iso_on_tcp.rs`'s parsing logic
 
 ### AC-185-010: VP-049 Kani harness skeleton compiles
@@ -239,7 +239,7 @@ mod kani_proofs {
   - any other high-nibble value -> `None` (BC-2.20.011)
 - [ ] Write `#[cfg(kani)]` block with `verify_parse_cotp_header_safety` skeleton
 - [ ] Write unit tests: one per AC; named `test_BC_2_20_005_*` .. `test_BC_2_20_012_*`
-- [ ] Write the proptest sweep over all 256 `u8` protocol-ID values (AC-185-009) and the
+- [ ] Write the exhaustive loop over all 256 `u8` protocol-ID values (AC-185-009) and the
       static regression-guard test (grep-equivalent assertion) for zero `0x32`/`0x72`
       literals in the parsing logic
 - [ ] Verify `cargo test` passes for this story's tests
@@ -309,7 +309,7 @@ Extracted from `docs/adr/0014-s7comm-iso-on-tcp-stream-dispatch-and-parser-desig
 |------|---------|---------|
 | Rust stdlib | 1.91+ (2024 edition) | Language; bitwise `&`, match patterns, enum dispatch |
 | kani | Latest via `cargo kani` | VP-049 formal verification harness |
-| proptest | 1 (pinned in `Cargo.toml`) | AC-185-009 protocol-ID totality sweep |
+| proptest | 1 (pinned in `Cargo.toml`, inherited from STORY-184) | Pre-existing TPKT-header oracle-matching proptests already in `tests/iso_on_tcp_tests.rs`; NOT used by AC-185-009's protocol-ID totality test, which is an exhaustive `#[test]` loop over all 256 `u8` values, not a proptest |
 
 No new external crate dependencies beyond what STORY-184 introduced.
 
@@ -318,7 +318,7 @@ No new external crate dependencies beyond what STORY-184 introduced.
 | File | Action | Purpose |
 |------|--------|---------|
 | `src/analyzer/iso_on_tcp.rs` | MODIFY | Add `CotpTpduType`, `CotpHeader`, `parse_cotp_header`, `#[cfg(kani)]` VP-049 skeleton |
-| `tests/iso_on_tcp_tests.rs` | MODIFY | Add BC-2.20.005-012 unit tests + protocol-ID totality proptest + regression-guard static check |
+| `tests/iso_on_tcp_tests.rs` | MODIFY | Add BC-2.20.005-012 unit tests + protocol-ID totality exhaustive-loop test + regression-guard static check |
 
 ## Forbidden Dependencies
 
