@@ -101,3 +101,18 @@ Prior checkpoints archived to `cycles/feature-iec104/session-checkpoints.md` and
 **Superseded by:** D-562 STORY-184 DELIVERED checkpoint (current, see STATE.md). F4 per-story TDD delivery, noted as the next step above, delivered STORY-184 (PR #466, 7ce0db5c) this burst.
 
 ---
+
+## Session Resume Checkpoint (2026-09-07) — D-562 STORY-184 DELIVERED
+
+**D-562 STORY-184 DELIVERED — PR #466 squash-merged to develop as 7ce0db5c (develop 97361cd4→7ce0db5c). Per-story adversarial CONVERGED 3/3 (mid-story RFC-min-7 rework per human ruling); pr-reviewer APPROVE, security CLEAN, CI 13/13. ADR-014 + CLAUDE.md port-102 edit LANDED on develop via this PR — F4-OBLIGATION-ADR014-CLAUDEMD RESOLVED (ADR-014 stays proposed until F7). STORY-INDEX.md v4.25→v4.26 (status column + wave-87 delivery-progress row; totals unchanged 147/97/863). New carry-forwards: DEFERRED-BC-2.20.005-STALE-LEN4, BC-2.20.002-LOW-DOUBLE-GUARD. Two process-gaps logged to cycles/feature-s7comm/lessons.md. develop=`7ce0db5c`, main=`46ebd6e3` (unchanged), `stories_delivered`=121. Pipeline IN-PROGRESS — F4 delta-implementation now 1/11 delivered. RESUME: `/vsdd-factory:rehydrate-wave` then `/vsdd-factory:next-step`.**
+
+- **Date:** 2026-09-07. Position: mode=feature-s7comm, IN-PROGRESS; F1 APPROVED (D-557) + F2 COMPLETE + gate APPROVED (D-559); F3 COMPLETE + gate APPROVED (D-560/D-561); F4 delta-implementation IN PROGRESS (D-561/D-562) — STORY-184 DELIVERED (wave 87), 1 of 11 stories; NEXT = STORY-185 (wave 88, COTP parse) — first step is the DEFERRED-BC-2.20.005-STALE-LEN4 fix.
+- **Convergence counter:** N/A — not in an adversarial/convergence loop (STORY-184's per-story loop closed CONVERGED 3/3; STORY-185's loop not yet dispatched).
+- **In-flight work:** none mid-TDD; no open story worktrees (STORY-184 worktree/branch cleaned up post-merge). This burst delivered STORY-184 (PR #466, `develop` `7ce0db5c`) and resolved F4-OBLIGATION-ADR014-CLAUDEMD. Deferred human PRs unchanged from D-556: #451 (DEFERRED, DIRTY/conflicting + policy contradiction); #407 (`CHANGES_REQUESTED` posted, OPEN awaiting contributor response).
+- **Pending human decisions / blockers:** none blocking STORY-185 dispatch. #451 rebase + policy-contradiction resolution; #407 contributor response — both carried forward, unaffected by this burst. DEFERRED-BC-2.20.005-STALE-LEN4 must be fixed as the first step of STORY-185 (tracked in Active Carry-Forwards, not a blocker to dispatch). STATE.md is ~118KB / NEEDS-COMPACT — a `/compact-state` pass is advisable before the next burst (not performed this burst).
+- **WIP branch list:** none.
+- **Resume command:** `/vsdd-factory:rehydrate-wave` then `/vsdd-factory:next-step`.
+
+**Superseded by:** D-563 STORY-185 DELIVERED checkpoint (current, see STATE.md). F4 per-story TDD delivery, noted as the next step above, delivered STORY-185 (PR #467, e0ea30ce, human-executed merge) this burst.
+
+---

@@ -5,7 +5,7 @@ story_id: STORY-185
 title: "S7comm COTP TPDU-Type Parser: parse_cotp_header, Protocol-ID Extraction, VP-049 Kani Skeleton"
 epic_id: E-23
 version: "1.0"
-status: ready
+status: delivered
 producer: story-writer
 timestamp: 2026-09-06T00:00:00Z
 phase: f3

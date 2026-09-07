@@ -432,3 +432,45 @@ event.
 **Burst note (2026-09-06):** STORY-185 in-flight adversarial P1 doc remediation — not a phase transition, no D-number/phase change. Adversary finding F-185-P1-002: AC-185-009's `**Test:**` line, the Tasks checklist, the Library/Framework table, and the File-Structure table all mischaracterized the protocol-ID totality test for `test_BC_2_20_012_protocol_id_extraction_totality` as a "proptest sweep over all 256 `u8` values"; the test is actually an exhaustive `#[test]` loop over all 256 `u8` values (0..=255), not a property-based (proptest) test. All 4 occurrences corrected to "exhaustive loop" framing; the Library/Framework table row also clarifies that `proptest` (inherited from STORY-184) is used only by pre-existing TPKT-header oracle-matching tests, not by AC-185-009. Body-wording-only change — no frontmatter, `inputs:`, or BC-trace edits. STORY-185's `input-hash` is computed over its declared `inputs:` (BC-2.20.005-012), not its own body, and those inputs were not touched by this edit: confirmed via `bin/compute-input-hash --scan`, STORY-185 remains MATCH (`7f6bb1e`, no rehash needed); MATCH=125, STALE=22 — the pre-existing 22-story background-stale set is unchanged.
 
 ---
+
+## Burst: D-563 STORY-185 DELIVERED (2026-09-07)
+
+**Trigger:** PR #467 (STORY-185, S7comm COTP TPDU-type parser) squash-merged to `develop` as commit `e0ea30ce` — **human-executed merge**, since the Claude Code permission classifier blocked the agent-dispatched `gh pr merge` (same failure class as #465; #466 slipped through the classifier). `develop` `7ce0db5c`→`e0ea30ce`. Per-story adversarial CONVERGED 3/3 (BC-5.39.001) in 5 passes — markedly faster than STORY-184's 10 passes, attributed to proactive application of the STORY-184 lessons (`PG-CHECK-GREEN-DOC-TENSE-BLINDSPOT`, `PG-CANONICAL-HOLDOUT-NOT-AC-ENFORCED`) during STORY-185's own drafting/pre-implementation passes. pr-reviewer APPROVE on cycle 1 (0 blocking findings — first-cycle clean, unlike STORY-184's 2-NIT-accepted APPROVE). security-reviewer CLEAN. CI 13/13 green.
+
+**Parent-commit:** `80083c2b697ddcc1e8e98f67c56a8f679ee044f7` ("factory: STORY-185 AC-185-009 wording fix (exhaustive-loop, not proptest) — adversary F-185-P1-002") on `factory-artifacts`.
+
+**Adversary verdict:** N/A for this factory-only bookkeeping burst — the per-story adversarial verdict being recorded (CONVERGED 3/3, BC-5.39.001, 5 passes) was reached on the develop-branch story PR #467 prior to this burst; this burst only transcribes that outcome into `.factory/` state.
+
+**Files touched (Dim-1): 6 unique files**
+- `.factory/stories/STORY-185.md` (status ready→delivered)
+- `.factory/stories/STORY-INDEX.md` (v4.26→v4.27: status column + wave-88 delivery-progress row)
+- `.factory/STATE.md` (frontmatter, EXACT RESUME POINT, Project Metadata, Phase Progress, Concurrent Cycles, Current Phase Steps, Decisions Log, Active Carry-Forwards, Session Resume Checkpoint, size-budget banner)
+- `.factory/cycles/feature-s7comm/lessons.md` (two residuals appended)
+- `.factory/cycles/feature-s7comm/session-checkpoints.md` (D-562 checkpoint archived)
+- `.factory/cycles/feature-s7comm/burst-log.md` (this entry)
+
+**State-manager actions this burst (single-commit burst, TD-VSDD-053):**
+- `STORY-185.md`: `status: ready` → `status: delivered` (frontmatter only — `status` is not a hashed input; canonical hash unchanged `7f6bb1e`).
+- `STORY-INDEX.md` v4.26→v4.27: Index Table status column for the STORY-185 row → `delivered`; new Wave Delivery Progress row for wave 88 (`1/1 DELIVERED`). No numeric story/points/wave totals changed (still 147/97/863; delivered 121→122).
+- `STATE.md`: frontmatter (version 2.9→3.0, `last_amended`, `phase`, `current_step`, `current_cycle`, `develop_head`, `stories_delivered`, `story_index_version`/`story_index_note`), EXACT RESUME POINT, Project Metadata (Version/Develop HEAD/Stories/Last Updated rows), Phase Progress F4 row, Concurrent Cycles feature-s7comm row, Current Phase Steps (D-563 added, D-558 evicted — full text preserved verbatim in Decisions Log D-558 row), Decisions Log D-563 row appended (ascending order, after D-562), Active Carry-Forwards (`PG-MERGE-CLASSIFIER-F4` + `PG-CANONICAL-HOLDOUT-NOT-AC-ENFORCED-WATCH` rows added), Session Resume Checkpoint replaced (D-562 checkpoint archived to `cycles/feature-s7comm/session-checkpoints.md`), size-budget banner reconciled (383 lines).
+- `cycles/feature-s7comm/lessons.md`: two residuals appended for cycle-close — (1) a regression-guard-comment overstatement NIT (accepted, non-blocking); (2) `PG-CANONICAL-HOLDOUT-NOT-AC-ENFORCED` recurrence #2 (STORY-184 + STORY-185) — nearing the 3× codification threshold, flagged for a self-improvement follow-up if it recurs on STORY-186.
+
+**Two accepted residuals from the STORY-185 PR review (not fixed, dispositioned):**
+1. A regression-guard-comment overstatement NIT — a code comment claimed broader regression coverage than the guard actually provides. Accepted as non-blocking (documentation-only overstatement, no functional gap).
+2. `PG-CANONICAL-HOLDOUT-NOT-AC-ENFORCED` recurrence — the RFC/ISO canonical-frame holdout tests exist and are correct for STORY-185, but (as with STORY-184) no acceptance criterion explicitly cites/requires them. This is the same gate-coverage gap first logged at STORY-184; two occurrences now recorded.
+
+**`PG-MERGE-CLASSIFIER-F4` — new operating arrangement:** the Claude Code permission classifier blocks or hangs on agent-dispatched `gh pr merge` for F4 story PRs. Concrete evidence: #465 blocked, #467 (this story) blocked, #466 slipped through without issue. The human has elected to run each story merge manually at the wave boundary for the remainder of F4 (STORY-186..194) rather than continuing to retry the agent-dispatched merge path. Recorded in STATE.md Active Carry-Forwards as a standing arrangement; future pr-manager dispatches should route the merge step to the human by default for the rest of this cycle.
+
+**Codifications:** None yet — `PG-CANONICAL-HOLDOUT-NOT-AC-ENFORCED` is at 2 occurrences (STORY-184, STORY-185), one short of the 3× codification threshold; watched via `PG-CANONICAL-HOLDOUT-NOT-AC-ENFORCED-WATCH` for STORY-186. `PG-MERGE-CLASSIFIER-F4` is recorded as an operating arrangement, not a policy change.
+
+**Dim-2 Attestation:** N/A — no shell gates applicable. This burst edits Markdown spec/story prose and frontmatter only; no compilation or test execution was performed as part of this burst.
+
+**Dim-5 Attestation:** N/A — no WASM binary changes. This burst writes only `.factory/` artifacts.
+
+**Dim-6 Attestation:** develop-branch change already landed, out of scope of this burst's own edits. STORY-185's implementation (the COTP TPDU-type parser) landed via PR #467 on the `feature/STORY-185-cotp-parser` story branch, separately reviewed (pr-reviewer, security-reviewer) and human-merged to `develop` as `e0ea30ce`. This burst only transcribes that outcome into `.factory/` artifacts and commits exclusively to `factory-artifacts` — no further develop-branch changes made here.
+
+**Dim-7 Attestation:** N/A — no test suite changes from this burst. CI 13/13 green was verified on PR #467 prior to merge, not re-run here.
+
+**Closes:** feature-s7comm F4 STORY-185 delivery (D-563, 2026-09-07). F4 delta-implementation remains OPEN — 2 of 11 stories delivered; STORY-186 next (wave 89).
+
+---

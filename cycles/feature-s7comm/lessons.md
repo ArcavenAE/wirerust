@@ -49,6 +49,31 @@ _(none recorded this cycle)_
    parser. Per DF-VALIDATION-001, any GitHub issue filed from this finding requires
    research-agent validation first.
    _Discovered: STORY-184 per-story adversarial review (mid-story RFC-min-7 rework), 2026-09-06/07._
+   **Recurrence #2 (STORY-185, 2026-09-07):** the RFC/ISO canonical-frame holdout tests for the
+   COTP TPDU-type parser exist and are correct, but again no acceptance criterion explicitly
+   cites or requires them — same gate-coverage gap, second occurrence. This is nearing the 3×
+   codification threshold: flagged for a self-improvement follow-up (AC-level enforcement
+   mechanism per the candidate disposition above) if it recurs a third time on STORY-186.
+
+3. **[accepted-residual] STORY-185 regression-guard-comment overstatement** — a code comment
+   introduced during STORY-185's implementation claimed broader regression coverage than the
+   guard it annotates actually provides (a documentation-only overstatement, not a functional
+   gap). Flagged as a NIT during pr-review and accepted as a non-blocking residual — the comment
+   text is imprecise but the underlying regression guard itself is correct and sufficient.
+   No code change made; recorded here so a future doc-pass can tighten the comment wording.
+   _Discovered: STORY-185 PR #467 review, 2026-09-07._
+
+4. **[process-gap] PG-MERGE-CLASSIFIER-F4** — the Claude Code permission classifier blocks or
+   hangs on agent-dispatched `gh pr merge` for F4 story PRs. Concrete evidence across this
+   cycle: PR #465 blocked, PR #467 (STORY-185) blocked; PR #466 (STORY-184) slipped through
+   without issue, so the failure is intermittent, not universal. Disposition: **not** filed as
+   a defect this cycle — the human has elected an operating-arrangement workaround (run each
+   F4 story merge manually at the wave boundary for the rest of F4, STORY-186..194) rather than
+   root-causing the classifier behavior. Recorded in STATE.md Active Carry-Forwards
+   (`PG-MERGE-CLASSIFIER-F4`) as a standing arrangement so future bursts expect it. If a root
+   cause is later pursued, per DF-VALIDATION-001 any GitHub issue filed from this finding
+   requires research-agent validation first.
+   _Discovered: STORY-184/185 PR merge attempts, 2026-09-06/07._
 
 ## Infrastructure-Level
 
@@ -59,4 +84,5 @@ _(none recorded this cycle)_
 | Lesson | Proposed Policy | Scope | Status |
 |--------|----------------|-------|--------|
 | 1 | Extend `bin/check-green-doc-tense` TIER-1 patterns with the "MUST FAIL" / "until the STORY-NNN implementer delivers" phrase shapes | Doc-tense gate coverage | proposed |
-| 2 | AC-level enforcement of `DF-CANONICAL-FRAME-HOLDOUT-001` (Red Gate or Step-4.5 entry check for a canonical-frame holdout test on parser stories) | Story-template / gate discipline | proposed |
+| 2 | AC-level enforcement of `DF-CANONICAL-FRAME-HOLDOUT-001` (Red Gate or Step-4.5 entry check for a canonical-frame holdout test on parser stories) — now 2 occurrences (STORY-184, STORY-185), nearing 3x codification threshold | Story-template / gate discipline | proposed — watch for STORY-186 recurrence |
+| 4 | Root-cause or document the Claude Code permission classifier's intermittent blocking of agent-dispatched `gh pr merge` on F4 story PRs (PG-MERGE-CLASSIFIER-F4) | Merge-authorization tooling | deferred — human workaround in place for rest of F4 |
