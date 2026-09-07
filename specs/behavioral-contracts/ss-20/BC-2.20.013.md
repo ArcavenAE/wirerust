@@ -1,7 +1,7 @@
 ---
 document_type: behavioral-contract
 level: L3
-version: "1.0"
+version: "1.1"
 status: draft
 producer: product-owner
 timestamp: 2026-09-06T00:00:00Z
@@ -13,7 +13,10 @@ subsystem: SS-20
 capability: CAP-20
 lifecycle_status: active
 introduced: feature-s7comm
-modified: []
+modified:
+  - version: "1.1"
+    date: 2026-09-07
+    change: "Added Reconciliation Note documenting the walk-first-bounds-carry relationship (STORY-186 adversarial gate F-02/F-03, two independent passes): the frame-walk loop's residual-only stash, combined with the u16-capped TPKT `length` field, bounds the directional carry at ≤65,534 bytes by construction. Cross-references BC-2.20.014 v1.1's defense-in-depth reclassification of the carry-overflow/T0814 guard. No change to this BC's own preconditions, postconditions, or invariants — the walk-first design (Invariant 1, anti-evasion rationale) is NOT reopened; this is documentation-only addition per human ruling (Option B — Defense-in-Depth)."
 deprecated: null
 deprecated_by: null
 replacement: null
@@ -86,6 +89,51 @@ aggregate carry-plus-delivery pre-check.
 3. **Directional isolation**: `carry_c2s` and `carry_s2c` are independent; a
    partial frame in one direction never affects parsing in the other.
 
+## Reconciliation Note (STORY-186 Adversarial Gate F-02/F-03, added 2026-09-07)
+
+**Walk-first bounds the directional carry ≤65,534 bytes by construction; this is the
+basis for BC-2.20.014 v1.1's defense-in-depth reclassification.**
+
+STORY-186's per-story adversarial gate (confirmed by two independent passes) found that
+BC-2.20.014's carry-overflow bound (`residual.len() > 65,535` → clear-and-resync + one
+T0814) is unreachable via the real `on_data` data path, because:
+
+1. **Postcondition 3 above** establishes that after the frame-walk loop runs, `carry[direction]`
+   holds only the trailing partial-frame residual — never a complete frame that was
+   available to extract. The largest possible such residual is a declared-but-incomplete
+   frame carrying a TPKT header whose `length` field is at its maximum representable
+   value, `65,535` (`u16::MAX`, BC-2.20.004), with at least 1 byte of that declared length
+   still missing (otherwise the frame would have been extracted, not stashed as
+   incomplete). The residual is therefore bounded at `≤ 65,534` bytes — one byte short of
+   BC-2.20.014's `> 65,535` overflow threshold — for every legitimate (declared-but-incomplete)
+   residual, on every `on_data` call.
+2. **Postcondition 1's `None` branch**, combined with BC-2.20.015's resync sub-routine, means
+   un-anchored garbage (bytes that never form a parseable `0x03`-anchored TPKT header) is
+   drained 1 byte at a time within the *same* `on_data` call until either a valid frame
+   candidate is found or fewer than 4 bytes remain (BC-2.20.015 Postcondition 3(b)). Garbage
+   is never carried forward whole from one call to the next and re-appended to on top of
+   more incoming garbage without an intervening resync attempt — so it cannot accumulate
+   across calls the way BC-2.20.014's original EC-003 premise assumed.
+3. Because TPKT `length` is u16-capped (`≤ 65,535`, RFC 1006 §6) and both the
+   legitimate-residual path (bound 1) and the adversarial-garbage path (bound 2) are
+   independently capped well below the `65,535` overflow threshold, the directional carry
+   is bounded at `≤ 65,534` bytes **by construction** — for both conformant and
+   adversarial input, on every `on_data` call, without exception.
+
+**Consequence:** BC-2.20.014's `residual.len() > 65,535` precondition can never be
+satisfied by any sequence of real `on_data` calls under this BC's walk-first design (or
+BC-2.20.015's resync design). Per human ruling (senior architect, 2026-09-07, Option
+B — Defense-in-Depth), BC-2.20.014's overflow bound and T0814 emission are RECLASSIFIED
+(BC-2.20.014 v1.1) as a defense-in-depth guard — structurally unreachable today, retained
+as a safety net against a future design regression in this BC or BC-2.20.015, not as an
+assertion that the guard is a live, exercisable runtime detection.
+
+**This walk-first design itself is NOT reopened by this finding or this reconciliation
+note.** The anti-evasion rationale above (Invariant 1) — rejecting an aggregate
+carry-plus-delivery pre-check in favor of always running the walk first — remains the
+settled ruling, mirroring IEC-104 F-172-001 and DNP3 F-B-002. The adversarial finding
+concerned only BC-2.20.014's reachability claim, not this BC's reassembly discipline.
+
 ## Edge Cases
 
 | ID | Description | Expected Behavior |
@@ -128,7 +176,7 @@ aggregate carry-plus-delivery pre-check.
 
 - BC-2.20.001..003 — depends on (the `None` reject paths whose bytes get stashed to carry)
 - BC-2.20.004 — depends on (the accept path whose `length` field drives the completeness check)
-- BC-2.20.014 — composes with (the residual-only byte bound applied to whatever this BC leaves in carry)
+- BC-2.20.014 — composes with (the residual-only byte bound applied to whatever this BC leaves in carry; see Reconciliation Note above — this BC's walk-first residual bound is one of the two premises proving BC-2.20.014's overflow guard unreachable-by-construction, v1.1)
 - BC-2.20.015 — composes with (resync anchor reused when a bad-version-byte reject occurs mid-walk)
 
 ## Architecture Anchors

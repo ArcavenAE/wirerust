@@ -14,6 +14,117 @@ changes, invariant rewrites).
 
 ---
 
+## [story-186-carry-overflow-defense-in-depth-reconciliation-2026-09-07] — 2026-09-07
+
+### MINOR: STORY-186 Per-Story Adversarial Gate Reconciliation — BC-2.20.014 Carry-Overflow/T0814 Reclassified to Defense-in-Depth (F-02/F-03)
+
+**Trigger:** STORY-186's per-story adversarial gate (confirmed by two independent passes,
+findings F-02/F-03) found BC-2.20.014's carry-overflow bound (`residual.len() >
+MAX_S7_ISO_ON_TCP_CARRY_BYTES` → clear-and-resync + one T0814 per direction) is
+UNREACHABLE via the real `on_data` data path — a contradiction between BC-2.20.013
+(walk-first + BC-2.20.015 1-byte resync CONSUME un-anchored garbage each call) and
+BC-2.20.014 (which assumed garbage ACCUMULATES in the carry past 65,535 bytes → emit one
+T0814). Because TPKT `length` is u16-capped (≤65,535) and resync drains garbage to <4
+bytes/call, the directional carry is provably bounded at ≤65,534, so `carry.len() >
+65,535` can never be true and EC-003 ("garbage accumulates past 65,535") is unsatisfiable.
+
+**Human ruling (senior architect, 2026-09-07): Option B — Defense-in-Depth.** The
+walk-first design already structurally bounds carry memory (no exploitable DoS exists),
+so the overflow/T0814 path is RECLASSIFIED as an unreachable-by-construction
+defense-in-depth guard, NOT asserted as a live runtime detection. BC-2.20.013's
+walk-first / no-aggregate-precheck design (settled anti-evasion ruling mirroring IEC-104
+F-172-001 / DNP3 F-B-002) is NOT reopened.
+
+**What changed:**
+
+- **AMENDED: BC-2.20.014 v1.0→v1.1** ("Carry-Overflow Bound
+  (`MAX_S7_ISO_ON_TCP_CARRY_BYTES = 65,535`) and T0814 Guard — Defense-in-Depth,
+  Unreachable by Construction Under Walk-First Design"; H1 retitled per H1-authority
+  rule from "Carry Buffer Bounded ...; Overflow Triggers Clear-and-Resync With One T0814
+  Per Direction"):
+  - Description, Preconditions, Postconditions, Invariants reworded to frame the guard's
+    bound-check and reaction mechanics as the guard's SPECIFIED behavior IF its
+    precondition is ever reached — not as an assertion that the precondition occurs on
+    real traffic. Invariant 1 extended to prove unreachability for BOTH the legitimate
+    residual path (bounded ≤65,534 via BC-2.20.013 walk-first) AND the adversarial
+    garbage path (bounded <4 bytes/call via BC-2.20.015 resync drain).
+  - EC-003 ("adversarial stream ... carry to grow past 65,535 bytes of accumulated
+    garbage") CORRECTED: original premise struck as unsatisfiable under the current
+    design; restated as the counterfactual the guard would catch under a future design
+    regression (e.g. resync no longer draining garbage per-call). Not exercisable via
+    the real `on_data` path today.
+  - Canonical Test Vectors' two over-bound rows reframed as SYNTHETIC — reachable only
+    via direct `S7commFlowState` carry construction bypassing `on_data`, for
+    guard-mechanics unit testing, not as black-box on-the-wire scenarios.
+  - New reachability Verification Property added: for the composed
+    BC-2.20.013+BC-2.20.014+BC-2.20.015 system, `carry[direction].len() > 65,535` is
+    false for every finite `on_data` call sequence — the formal counterpart of Invariant 1.
+  - **F-03 reconciled:** the implementation's call-entry carry check (evaluates the
+    *previous* call's residual before the current call's walk begins, per AC-186-005)
+    vs. this BC's original Precondition 1 ("after-walk residual, same call") are shown
+    equivalent — both observation points are bounded by the same proof, so neither can
+    ever fire. AC-186-005's call-entry placement is retained as the implementation's
+    placement of record; no AC change required to the timing itself.
+  - Guard mechanics that DO apply IF the guard is ever reached — strict `>` comparison,
+    clear-not-truncate, one T0814 (`Anomaly`/`Possible`/`Medium`) per direction,
+    per-direction dedup flag distinct from any malformed-length dedup flag — are
+    UNCHANGED; retained verbatim as the guard's binding specification.
+  - Traceability: MITRE Techniques row annotated — T0814 is specified for the guard path
+    but "not observable on real traffic under the current design"; ADR row flags a
+    possible ADR-014 Decisions 5/8 inconsistency for architect follow-up (see below).
+
+- **AMENDED: BC-2.20.013 v1.0→v1.1** ("TPKT Frames Spanning TCP Segment Boundaries Are
+  Reassembled via Directional Carry Buffers Using Walk-First, Residual-Bound
+  Semantics"):
+  - New "Reconciliation Note" section added (after Invariants, before Edge Cases)
+    documenting the walk-first-bounds-carry relationship: the frame-walk loop's
+    residual-only stash (Postcondition 3), combined with the u16-capped TPKT `length`
+    field, bounds the legitimate residual at ≤65,534 bytes; combined with BC-2.20.015's
+    per-call garbage drain, the directional carry is bounded ≤65,534 bytes by
+    construction for both conformant and adversarial input. Cross-references
+    BC-2.20.014 v1.1's defense-in-depth reclassification.
+  - Related BCs entry for BC-2.20.014 annotated with the same cross-reference.
+  - **No change** to this BC's own Preconditions, Postconditions, or Invariants — the
+    walk-first anti-evasion design (Invariant 1) is explicitly NOT reopened by this
+    reconciliation, per human ruling.
+
+**BC counts:** No change — 441 on disk / 440 active (amendment-only burst, no new or
+retired BCs).
+**BC-INDEX:** v2.38.1→v2.38.2 (rows for BC-2.20.013/014 annotated; navigation note
+added).
+**PRD:** Not amended by this burst — §2.20 narrative text does not name the T0814
+overflow path as a distinct claim requiring correction; if a future audit finds
+PRD §2.20 prose asserting the overflow path as a live detection, that is a follow-up
+item, not resolved here.
+
+**FLAGGED — NOT resolved by this burst:** `docs/adr/0014-s7comm-iso-on-tcp-stream-dispatch-and-parser-design.md`
+Decision 5/8 may assert the T0814 carry-overflow emission as a live runtime detection.
+If so, that ADR text is now internally inconsistent with BC-2.20.014 v1.1's
+defense-in-depth reclassification. Out of product-owner scope (BCs/BC-INDEX/changelog
+only per this task's mandate) — flagged for the orchestrator to dispatch the architect
+for a matching ADR-014 reconciliation note.
+
+**Downstream propagation (not performed by this burst, by design):**
+- **story-writer** must propagate AC-186-004/005/006 wording changes into STORY-186's
+  body under `bc_array_changes_propagate_to_body_and_acs` and recompute STORY-186's
+  `input-hash` (STORY-186's `inputs:` list includes BC-2.20.013.md and BC-2.20.014.md,
+  both of whose content changed in this burst; BC-2.20.013/014's OWN `input-hash` values
+  are unaffected — their `inputs:` are `docs/adr/0014-...md` and `ARCH-INDEX.md`, neither
+  of which was edited here).
+- **architect** must add the ADR-014 reconciliation note flagged above, and confirm
+  whether VP-050's scope already covers the new reachability Verification Property added
+  to BC-2.20.014, or allocate a new VP.
+- **test-writer / implementer** handle any resulting test/code changes in the next step
+  (not performed here).
+
+**Affected story:** STORY-186 (AC-186-004, AC-186-005, AC-186-006 reference the amended
+BCs; not edited in this burst per scope).
+
+**ADR reference:** ADR-014 Decision 8 (WALK-FIRST-RESIDUAL-BOUND); ADR-014 Decisions 5/8
+flagged above for architect follow-up.
+
+---
+
 ## [maint-2026-07-06-spec-hygiene] — 2026-07-06
 
 ### MAJOR: Spec Hygiene — F-NEW-MAJ-001 (VP Sharding Gap) + F-NEW-MAJ-002 (Module Criticality Gap)
