@@ -99,3 +99,9 @@ F-B2 verified fixed. 1 LOW non-blocking: TypeID 45 (C_SC_NA_1 control command) d
      table in STATE.md body. The F5 phase-level pass data was extracted from Decisions
      Log entries D-465..D-468. -->
 
+
+---
+
+## STATE.md Convergence Status Row (extracted on 2026-09-07, compact-state)
+
+F5 phase-level trajectory: 5 rounds, code frozen R2, `5H/M→2M→1H→1M→1L(NB)` — CONVERGED (D-468).
