@@ -4,7 +4,7 @@ level: ops
 story_id: STORY-186
 title: "S7comm ISO-on-TCP Carry-Buffer Reassembly, Walk-First Frame Extraction, Resync, and the Frozen SS-20/SS-21 Module Boundary"
 epic_id: E-23
-version: "1.0"
+version: "1.1"
 status: ready
 producer: story-writer
 timestamp: 2026-09-06T00:00:00Z
@@ -34,7 +34,7 @@ inputs:
   - .factory/specs/architecture/ARCH-INDEX.md
   - docs/adr/0014-s7comm-iso-on-tcp-stream-dispatch-and-parser-design.md
   - .factory/cycles/feature-s7comm/f2-pcap-fixture-sourcing.md
-input-hash: "87f3feb"
+input-hash: "a99a2d5"
 ---
 
 > **tdd_mode:** `strict` — full TDD Iron Law enforced.
@@ -110,43 +110,94 @@ classification.
   extracted and `carry[direction]` is empty afterward
 - **Test:** `test_BC_2_20_013_split_frame_across_two_calls`
 
-### AC-186-004: Carry buffer bounded at 65,535 bytes; at-bound residual is legitimate, not overflow
+### AC-186-004: Carry buffer bounded at 65,535 bytes; at-bound residual is legitimate, not overflow (guard's comparison boundary — reachable via real `on_data` traffic)
 (traces to BC-2.20.014 invariant 1) (traces to BC-2.20.014 edge case EC-001)
 - Given a residual of exactly 65,535 bytes from a still-incomplete, conformant
-  `length=65,535` frame
+  `length=65,535` frame — this is the maximum legitimate single-frame residual, and unlike
+  AC-186-005/006 below it IS reachable via the real `on_data` walk-first data path
+  (BC-2.20.014 v1.1 Canonical Test Vectors, "legit: exact ceiling — reachable via real
+  `on_data` traffic")
 - When the residual-bound check runs
 - Then no overflow is triggered (comparison is strict `>`, not `>=`); the residual is
-  retained in carry unchanged
+  retained in carry unchanged. This proves the defense-in-depth guard's comparison
+  boundary (BC-2.20.014 v1.1 Invariant 1) sits exactly at the TPKT `length` field's
+  maximum representable value (`u16::MAX`), not merely "large" — the guard's OVER-bound
+  branch is unreachable-by-construction (AC-186-005/006), but this AT-bound case is live
+  real-traffic behavior, not synthetic
 - **Test:** `test_BC_2_20_014_at_bound_residual_no_overflow`
 
-### AC-186-005: Carry overflow clears the direction's carry, resyncs, and emits exactly one T0814 per direction
+### AC-186-005: [DEFENSE-IN-DEPTH, unreachable via `on_data`] Carry-overflow guard mechanics — clears carry, resyncs, emits exactly one T0814 per direction, IF the guard's precondition is ever reached
 (traces to BC-2.20.014 postcondition 1) (traces to BC-2.20.014 postcondition 3)
-- Given `residual.len() > MAX_S7_ISO_ON_TCP_CARRY_BYTES` (i.e. `> 65,535`) at the start of
-  an `on_data` call, before the current delivery is appended and the walk begins
-- When the overflow check fires
+- **Reclassification (BC-2.20.014 v1.1, STORY-186 adversarial gate F-02/F-03, two
+  independent passes, human ruling 2026-09-07 — Option B: Defense-in-Depth):**
+  `residual.len() > 65,535` is provably unreachable via the real `on_data` data path
+  under the current BC-2.20.013 walk-first + BC-2.20.015 1-byte-resync design — TPKT
+  `length` is u16-capped, so the directional carry is bounded `≤ 65,534` bytes by
+  construction for both conformant and adversarial input (BC-2.20.013 Reconciliation
+  Note). This AC therefore specifies the guard's mechanics as a **structural
+  defense-in-depth safety net** against a future design regression in BC-2.20.013 or
+  BC-2.20.015 — **not** as a live runtime detection exercised by real traffic today. The
+  tests below exercise the guard by **directly constructing/injecting an oversized
+  `S7commFlowState.carry_c2s`/`carry_s2c`** (bypassing the normal `on_data` walk-first/
+  resync path entirely) — this is the SYNTHETIC guard-mechanics vector named in
+  BC-2.20.014 v1.1's Canonical Test Vectors table, not a scenario reachable by feeding
+  bytes through `on_data`.
+- Given `residual.len() > MAX_S7_ISO_ON_TCP_CARRY_BYTES` (i.e. `> 65,535`), directly
+  constructed on the directional carry field at call-entry — before the current
+  delivery is appended and the walk begins — per BC-2.20.014 v1.1's F-03 reconciliation,
+  which retains this call-entry check placement as equivalent to (and reconciled with)
+  the BC's originally-specified after-walk-same-call precondition, since Invariant 1
+  proves neither placement can ever observe a value exceeding the bound on real traffic
+- When the overflow check fires (IF reached)
 - Then `carry[direction]` is cleared (not truncated); the walk resyncs (BC-2.20.015); and
   exactly one T0814 finding (`ThreatCategory::Anomaly`, `Verdict::Possible`,
   `Confidence::Medium`) is emitted for this direction, guarded by
   `carry_overflow_reported_c2s`/`_s2c` (traces to BC-2.20.014 postcondition 4 — this
-  dedup flag is distinct from any malformed-header dedup flag introduced in STORY-187)
-- A second overflow event in the same direction on the same flow does not re-emit
-  (traces to BC-2.20.014 edge case EC-004)
+  dedup flag is distinct from any malformed-header dedup flag introduced in STORY-187).
+  These mechanics (clear-not-truncate, resync, one-T0814-per-direction, dedup) remain the
+  BINDING SPECIFICATION for the guard's behavior IF it is ever reached (BC-2.20.014 v1.1
+  Postconditions 1-4 / Invariants 2-4)
+- A second overflow event, directly constructed in the same direction on the same flow,
+  does not re-emit (traces to BC-2.20.014 edge case EC-004 — same SYNTHETIC/
+  direct-injection reachability caveat as above)
 - **Test:** `test_BC_2_20_014_overflow_clear_resync_one_t0814_per_direction`,
-  `test_BC_2_20_014_repeated_overflow_dedup_same_direction`
+  `test_BC_2_20_014_repeated_overflow_dedup_same_direction` (both exercise the guard via
+  direct flow-state construction, not via `on_data`)
 
-### AC-186-006: Overflow dedup flags are independent per direction
+- **NEW positive assertion — on_data-driven unreachability (BC-2.20.014 v1.1 Invariant 1
+  / VP-050 reachability property):** feeding a real garbage flood through `on_data` (e.g.
+  200,000 bytes of non-`0x03`-anchored garbage delivered across one or many calls, with
+  no valid TPKT frame ever presented) does **NOT** emit a T0814 for either direction, and
+  the directional carry stays bounded `≤ 65,534` bytes at every observation point — the
+  resync sub-routine (BC-2.20.015) drains un-anchored garbage below 4 remaining bytes
+  before each call's walk terminates, so garbage never accumulates carry-to-carry across
+  calls (traces to BC-2.20.014 postcondition-negation via Invariant 1 / BC-2.20.013
+  Reconciliation Note — this is the positive, on-`on_data`-path counterpart to the
+  SYNTHETIC guard-mechanics tests above)
+- **Test:** `test_BC_2_20_014_overflow_unreachable_via_on_data`
+
+### AC-186-006: [DEFENSE-IN-DEPTH, unreachable via `on_data`] Overflow dedup flags are independent per direction — guard mechanics, IF reached
 (traces to BC-2.20.014 edge case EC-005)
-- Given an overflow event in the `c2s` direction on a flow
-- When an independent overflow event subsequently occurs in the `s2c` direction on the
-  same flow
+- **Reclassification note:** as with AC-186-005, this AC exercises guard mechanics only
+  reachable via SYNTHETIC direct flow-state construction (BC-2.20.014 v1.1 Canonical Test
+  Vectors), not via the real `on_data` data path — see AC-186-005's reclassification
+  preamble for the full rationale
+- Given an overflow event directly constructed in the `c2s` direction on a flow
+- When an independent overflow event is subsequently directly constructed in the `s2c`
+  direction on the same flow
 - Then the `s2c` overflow emits its own T0814 finding — the `c2s` dedup flag has no
-  bearing on `s2c`
-- **Test:** `test_BC_2_20_014_overflow_dedup_independent_per_direction`
+  bearing on `s2c`. This per-direction independence remains the binding specification for
+  the guard's dedup mechanics IF the guard is ever reached (BC-2.20.014 v1.1
+  Postcondition 4 / Invariant 4)
+- **Test:** `test_BC_2_20_014_overflow_dedup_independent_per_direction` (exercises the
+  guard via direct flow-state construction, not via `on_data`)
 
 ### AC-186-007: Resync advances exactly 1 byte per iteration on a bad version byte, never 2
 (traces to BC-2.20.015 postcondition 1) (traces to BC-2.20.015 invariant 1)
-- Given bytes `[0x01, 0x03, 0x00, 0x00, 0x04]` (a spurious `0x01` immediately followed by
-  a valid frame at offset 1)
+- Given bytes `[0x01, 0x03, 0x00, 0x00, 0x07]` (a spurious `0x01` immediately followed by
+  a valid frame at offset 1, `length=7` — BC-2.20.015's canonical vector; corrected from
+  an earlier `length=4` example, which `parse_tpkt_header` would reject outright since
+  BC-2.20.003 requires `length >= 7`)
 - When the frame-walk loop's resync sub-routine runs
 - Then the valid frame at offset 1 is found; a 2-byte advance would have skipped it
   entirely (landing at offset 2, `0x00`)
@@ -299,7 +350,7 @@ the concatenated bytes) is executed in STORY-194.
 | EC-002 | BC-2.20.013 | TCP segment delivers two complete frames back-to-back plus a partial third | Both complete frames extracted in the same call; only the partial third stashed |
 | EC-003 | BC-2.20.014 | `residual.len() == 65,535` exactly (at bound, legitimate) | No overflow; comparison is strict `>`, not `>=` |
 | EC-004 | BC-2.20.014 | `residual.len() == 65,536` (one over bound, adversarial) | Carry cleared; resync; exactly one T0814 |
-| EC-005 | BC-2.20.015 | `0x03` byte exists but starts a frame with an invalid length field (`< 4`) | Resync finds this `0x03`, `parse_tpkt_header` returns `None` again (different reject reason), walk continues advancing 1 byte past it — never stuck retrying the same offset |
+| EC-005 | BC-2.20.015 | `0x03` byte exists but starts a frame with an invalid length field (`< 7`, BC-2.20.003) | Resync finds this `0x03`, `parse_tpkt_header` returns `None` again (different reject reason), walk continues advancing 1 byte past it — never stuck retrying the same offset |
 | EC-006 | BC-2.20.016 | A future MMS/ICCP cycle wants to reuse `parse_tpkt_header`/`parse_cotp_header` | Imports them directly; defines its own analogous flow-state fields — zero lines of `iso_on_tcp.rs` change |
 
 ## Token Budget Estimate
@@ -380,4 +431,5 @@ No new external crate dependencies.
 
 | Version | Date | Author | Change |
 |---------|------|--------|--------|
+| 1.1 | 2026-09-07 | story-writer | Adversarial-review spec reconciliation (BC-2.20.013/014 v1.1, STORY-186 gate F-02/F-03/F-04, human ruling Option B — Defense-in-Depth): reframed AC-186-004/005/006 — the carry-overflow bound + T0814 emission is now specified as a defense-in-depth guard, unreachable-by-construction via `on_data` under the walk-first (BC-2.20.013) + 1-byte-resync (BC-2.20.015) design given the u16 TPKT length cap (carry provably `≤ 65,534`); AC-186-004 retained as the guard's live-reachable at-bound comparison-boundary case; AC-186-005/006 reframed as SYNTHETIC direct-flow-state-injection guard-mechanics tests (test-fn names unchanged); added new AC-186-005 positive assertion + test `test_BC_2_20_014_overflow_unreachable_via_on_data` asserting a real `on_data` garbage flood emits no T0814 and keeps carry `≤ 65,534`. Fixed F-04 story-text defect: AC-186-007's inline byte example corrected from the invalid `[0x01,0x03,0x00,0x00,0x04]` (length=4, rejected by BC-2.20.003's `length >= 7` floor) to BC-2.20.015's canonical `[0x01,0x03,0x00,0x00,0x07]`; corrected Edge Case EC-005's length floor from `< 4` to `< 7`. No change to `behavioral_contracts:`, file list, or guard IF-reached mechanics (clear-not-truncate, one T0814/direction, per-direction dedup — AC-186-005's call-entry framing stands). |
 | 1.0 | 2026-09-06 | story-writer | Initial authorship — `s7comm.rs` created, carry-buffer reassembly, walk-first frame extraction, resync, frozen SS-20/SS-21 boundary regression guards, VP-050 skeleton, AC-186-001..012. |
