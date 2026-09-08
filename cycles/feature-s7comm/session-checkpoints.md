@@ -146,3 +146,18 @@ Prior checkpoints archived to `cycles/feature-iec104/session-checkpoints.md` and
 **Superseded by:** D-565 STORY-186 DELIVERED checkpoint (current, see STATE.md). Session resumed from wrap-pause; F4 per-story TDD delivery dispatched and delivered STORY-186 (PR #470, 294174f5) this burst.
 
 ---
+
+## Session Resume Checkpoint (2026-09-07) — D-565 STORY-186 DELIVERED
+
+**D-565 STORY-186 DELIVERED — PR #470 squash-merged to develop as 294174f5 (2026-09-07T23:49Z; develop e0ea30ce→294174f5); main checkout synced ff-only, worktree+branch cleaned up. Per-story adversarial CONVERGED 3/3 across 5 passes (P1/P1b/P2/P3/P5) with a mid-story human ruling (Option B defense-in-depth) driving a BC-2.20.013/014 v1.0→v1.1 spec reconciliation; pr-reviewer APPROVE, security CLEAN (2 reviews), CI 13/13, demo evidence 12/12 ACs. develop=`294174f5`, main=`46ebd6e3` (unchanged), `stories_delivered`=123. Pipeline IN-PROGRESS (resumed from SESSION-WRAP-PAUSE). F4 now 3/11 delivered. RESUME: dispatch STORY-187 (wave 90) via the per-story-delivery workflow.**
+
+- **Date + position:** 2026-09-07; feature-s7comm F4 IN PROGRESS; 3/11 delivered (STORY-184 #466, STORY-185 #467, STORY-186 #470 → develop 294174f5); NEXT = STORY-187 (wave 90, flow state completion + protocol_id dispatch skeleton + parse_s7comm_header). Epic E-23, waves 87-97, 11 stories/71 pts total.
+- **Convergence counter:** none active — STORY-186's per-story adversarial loop closed CONVERGED 3/3; STORY-187's loop not yet dispatched.
+- **In-flight work:** none mid-TDD; no open story worktrees (STORY-186 worktree/branch cleaned up post-merge). This burst delivered STORY-186 (PR #470, `develop` `294174f5`) and resolved the mid-story BC-2.20.013/014 defense-in-depth reconciliation. Deferred human PRs unchanged from D-556: #451 (DEFERRED, DIRTY/conflicting + policy contradiction); #407 (`CHANGES_REQUESTED` posted, OPEN awaiting contributor response).
+- **Pending human decisions / blockers:** none blocking STORY-187 dispatch. #451 rebase + policy-contradiction resolution; #407 contributor response — both carried forward, unaffected by this burst. `BC-2.20.014`'s stale "OPEN ITEM (2026-09-07)" forward-reference marker + the `ADR-014`-vs-`ADR-0014` naming-convention NIT are accepted residuals targeted at a future STORY-187 spec pass or maintenance sweep (not fixed this burst — editing the BCs now would trigger a rehash cascade on the just-merged wave). `PG-MERGE-CLASSIFIER-F4` means the next story merge (STORY-187) again requires a human-executed `gh pr merge`, not agent-dispatched. STATE.md remains NEEDS-COMPACT — a `/compact-state` pass is advisable before the next burst (not performed this burst).
+- **WIP branch list with SHAs:** none — STORY-186 feature branch was merged and deleted; STORY-184/185 feature branches were merged and deleted.
+- **Resume command:** `/vsdd-factory:rehydrate-wave` then `/vsdd-factory:next-step`.
+
+**Superseded by:** SESSION-WRAP-PAUSE-2026-09-07 (D-566) checkpoint (current, see STATE.md). Factory paused per human wrap request after this burst; no work in-flight, next dispatch is STORY-187 (wave 90).
+
+---
