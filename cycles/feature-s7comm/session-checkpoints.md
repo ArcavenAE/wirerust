@@ -131,3 +131,18 @@ Prior checkpoints archived to `cycles/feature-iec104/session-checkpoints.md` and
 **Superseded by:** SESSION-WRAP-PAUSE-2026-09-07 (D-564) checkpoint (current, see STATE.md). Factory paused per human wrap request after this burst; STORY-186 worktree created (clean baseline, no code) but per-story TDD delivery not yet dispatched.
 
 ---
+
+## Session Resume Checkpoint (2026-09-07) — SESSION-WRAP-PAUSE-2026-09-07 (D-564)
+
+**SESSION-WRAP-PAUSE-2026-09-07 — factory paused mid-F4 (feature-s7comm) after STORY-185 DELIVERED (D-563). 2/11 F4 stories delivered (STORY-184 #466 wave 87, STORY-185 #467 wave 88, both merged to develop e0ea30ce). STORY-186 worktree created (clean baseline, no code) on branch feature/STORY-186-iso-on-tcp-reassembly (base develop e0ea30ce). Pipeline PAUSED for session `/clear`. develop=`e0ea30ce`, main=`46ebd6e3` (unchanged), `stories_delivered`=122. RESUME: `/vsdd-factory:rehydrate-wave` then `/vsdd-factory:next-step`.**
+
+- **Date + position:** 2026-09-07; feature-s7comm F4 IN PROGRESS; 2/11 delivered (STORY-184 #466, STORY-185 #467 → develop e0ea30ce); NEXT = STORY-186 (wave 89, carry-buffer reassembly + flow-map lifecycle, creates s7comm.rs). Epic E-23, waves 87-97, 11 stories/71 pts total.
+- **Convergence counter:** none active — per-story adversarial loop closed clean; STORY-186 not yet started.
+- **In-flight work:** STORY-186 worktree `.worktrees/STORY-186` on branch `feature/STORY-186-iso-on-tcp-reassembly` (base develop e0ea30ce) is CREATED but a CLEAN BASELINE — no stubs/tests/code yet. No sub-agent steps were abandoned mid-step (all in-flight agents completed before wrap). On resume, this worktree can be reused (or recreated from develop) — do NOT double-create.
+- **Pending human decisions / blockers:** (1) **PG-MERGE-CLASSIFIER-F4** — the Claude Code permission classifier blocks/hangs agent-dispatched `gh pr merge` for F4 story PRs; the operator runs each story merge MANUALLY at the wave boundary (`gh pr merge <N> --squash --delete-branch`). (2) **PG-CANONICAL-HOLDOUT-NOT-AC-ENFORCED** — 2 occurrences (STORY-184/185); watch STORY-186 for a 3rd → codify as a self-improvement follow-up. (3) Two non-F4 PRs remain deferred/OPEN: #451 (dtolnay pin, DIRTY/policy-contradiction) and #407 (fork-ops, request-changes posted to contributor). (4) STATE.md is 383 lines (WARNING band) — compaction advisable in a future session, not required.
+- **WIP branch list with SHAs:** none — STORY-186 branch `feature/STORY-186-iso-on-tcp-reassembly` @ e0ea30ce has NO commits ahead of develop (clean baseline). STORY-184/185 feature branches were merged and deleted.
+- **Resume command:** `/vsdd-factory:rehydrate-wave` then `/vsdd-factory:next-step`.
+
+**Superseded by:** D-565 STORY-186 DELIVERED checkpoint (current, see STATE.md). Session resumed from wrap-pause; F4 per-story TDD delivery dispatched and delivered STORY-186 (PR #470, 294174f5) this burst.
+
+---

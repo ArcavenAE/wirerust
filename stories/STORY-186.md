@@ -5,7 +5,7 @@ story_id: STORY-186
 title: "S7comm ISO-on-TCP Carry-Buffer Reassembly, Walk-First Frame Extraction, Resync, and the Frozen SS-20/SS-21 Module Boundary"
 epic_id: E-23
 version: "1.1"
-status: ready
+status: delivered
 producer: story-writer
 timestamp: 2026-09-06T00:00:00Z
 phase: f3

@@ -75,14 +75,93 @@ _(none recorded this cycle)_
    requires research-agent validation first.
    _Discovered: STORY-184/185 PR merge attempts, 2026-09-06/07._
 
+5. **[accepted-residual] ADR-014 vs ADR-0014 naming-convention NIT** — `s7comm.rs` doc-comments
+   and the STORY-186 CHANGELOG entry refer to the architecture decision as "ADR-014", while the
+   repo's established convention (per `CLAUDE.md`'s ADR table and the filename
+   `docs/adr/0014-s7comm-iso-on-tcp-stream-dispatch-and-parser-design.md`) is the 4-digit form
+   "ADR-0014". Cosmetic only — no functional or traceability impact, the numeric ID is
+   unambiguous either way. Non-blocking; accepted as a residual for a future doc-pass or the
+   STORY-187 spec-review checkpoint rather than a same-burst fix.
+   _Discovered: STORY-186 PR #470 review, 2026-09-07._
+
+6. **[accepted-residual] BC-2.20.014 stale "OPEN ITEM (2026-09-07)" forward-reference** —
+   `BC-2.20.014`'s v1.1 text still carries an "OPEN ITEM (2026-09-07)" marker requesting the
+   ADR-0014 reconciliation note that documents the defense-in-depth reclassification. That note
+   **WAS** added (`docs/adr/0014-s7comm-iso-on-tcp-stream-dispatch-and-parser-design.md`,
+   landed on `develop` as part of `294174f5`) but the OPEN ITEM marker on `BC-2.20.014` itself
+   was never cleared to reflect that the request is satisfied. Non-blocking (the substantive
+   content is correct and complete); marked for resolution at the STORY-187 spec pass or a
+   future maintenance sweep — not fixed this burst, since editing `BC-2.20.014` now would
+   trigger a canonical input-hash rehash cascade across every story/BC that cites it, on top of
+   the wave just merged.
+   _Discovered: STORY-186 PR #470 review, 2026-09-07._
+
+7. **[accepted-residual] BC-2.20.014 canonical-vector "At-bound, legitimate" row self-inconsistency**
+   — `BC-2.20.014`'s canonical test-vector table includes an "At-bound, legitimate" row
+   describing a 65,535-byte carry buffer that is "still incomplete" (awaiting more bytes to
+   complete a frame). Under the `u16` length-field cap, a TPKT frame's maximum total length is
+   65,535 bytes, so a 65,535-byte carry residual that is simultaneously "still incomplete" is
+   unrealizable — the vector as written describes a state the type system cannot produce. The
+   implementation and its tests correctly sidestep this by not attempting to construct the
+   unrealizable case; the defect is in the spec's illustrative vector text, not in behavior.
+   Non-blocking; flagged for a spec-vector precision pass alongside item 6 above (same BC file,
+   same deferred-edit rationale — avoid a rehash cascade on the just-merged wave).
+   _Discovered: STORY-186 adversarial review, 2026-09-07._
+
+8. **[process-gap] Inherited BC-2.20.013-vs-2.20.014 spec contradiction escaped F2/F3 review** —
+   `BC-2.20.013` (walk-first resync CONSUMES garbage bytes on a bad version byte) and
+   `BC-2.20.014` (the carry-overflow guard, as originally specified, assumed garbage
+   ACCUMULATES rather than being consumed by the walk-first resync) were mutually inconsistent
+   from their original F2 authoring — the contradiction produced a literal dead-code path
+   (finding F-02, STORY-186 Pass 1) requiring a mid-story human ruling (Option B,
+   defense-in-depth) and a same-burst `BC-2.20.013`/`BC-2.20.014` v1.0→v1.1 reconciliation. This
+   is the **second** coupled-BC contradiction in this epic to escape early detection (see lesson
+   2's `PG-CANONICAL-HOLDOUT-NOT-AC-ENFORCED`, a related-but-distinct gap) and was not caught
+   during F2 spec-evolution's fresh-context consistency audit (D-558) nor F3 story
+   decomposition (D-560/D-561) — only surfacing at STORY-186's per-story implementation
+   adversarial review, well after both BCs had been authored, reviewed, and cited as story
+   inputs. Candidate disposition: extend the F2 consistency-audit protocol (or add a dedicated
+   F2/F3 cross-BC consistency checkpoint) to specifically diff paired/coupled BCs within a
+   subsystem for state-model contradictions (one BC's precondition assumption invalidated by a
+   sibling BC's guarantee), not just internal self-consistency per BC. Recorded as a new open
+   Drift Item (`DRIFT-F2-CROSS-BC-CONSISTENCY-CHECK`) in
+   `cycles/feature-s7comm/drift-items-and-carry-forwards.md`. Per DF-VALIDATION-001, any GitHub
+   issue filed from this finding requires research-agent validation first.
+   _Discovered: STORY-186 per-story adversarial pass 1, 2026-09-07._
+
 ## Infrastructure-Level
 
-_(none recorded this cycle)_
+1. **[infra] Nested-subagent messaging deadlock** — pr-manager (dispatched as a subagent for
+   STORY-186's PR lifecycle) could not receive its **own** grandchild sub-agents' (security-
+   reviewer, pr-reviewer, github-ops CI-check) `SendMessage` replies — those replies routed to
+   the parent (orchestrator) session instead of back to pr-manager. Caused a ~40-minute stall
+   and a BLOCKED escalation; the orchestrator took over the PR tail directly to unblock
+   delivery. Mitigation identified: reviewer/github-ops results should return via an awaited
+   Agent-tool dispatch (to the actual dispatcher) rather than a teammate-plus-`SendMessage`
+   pattern when the dispatcher is itself a subagent (not the top-level session). Already filed
+   via SendFeedback — no further factory-side action needed this cycle.
+   _Discovered: STORY-186 PR #470 delivery, 2026-09-07._
+
+2. **[infra] Idle-notification echo storm** — completed roster teammates (`sec-review`,
+   `gh-verify-ci`) repeatedly re-woke the orchestrator with duplicate idle notifications after
+   completing their work, until an explicit `TaskStop` silenced them. Harness/runtime
+   notification-plumbing issue, not a factory logic defect. Already filed via SendFeedback — no
+   further factory-side action needed this cycle.
+   _Discovered: STORY-186 PR #470 delivery, 2026-09-07._
+
+3. **[infra] adversarial-review skill fork yielded before dispatched adversary passes reported**
+   — the `adversarial-review` skill's fork returned control before its own dispatched adversary
+   passes had actually reported back; one adversary teammate (`adv-p1`) wedged for
+   approximately 15 hours and had to be `TaskStopped` and re-dispatched to make progress.
+   Harness/runtime fork-lifecycle issue. Already filed via SendFeedback — no further
+   factory-side action needed this cycle.
+   _Discovered: STORY-186 per-story adversarial review dispatch, 2026-09-07._
 
 ## Policy Candidates
 
 | Lesson | Proposed Policy | Scope | Status |
 |--------|----------------|-------|--------|
 | 1 | Extend `bin/check-green-doc-tense` TIER-1 patterns with the "MUST FAIL" / "until the STORY-NNN implementer delivers" phrase shapes | Doc-tense gate coverage | proposed |
-| 2 | AC-level enforcement of `DF-CANONICAL-FRAME-HOLDOUT-001` (Red Gate or Step-4.5 entry check for a canonical-frame holdout test on parser stories) — now 2 occurrences (STORY-184, STORY-185), nearing 3x codification threshold | Story-template / gate discipline | proposed — watch for STORY-186 recurrence |
-| 4 | Root-cause or document the Claude Code permission classifier's intermittent blocking of agent-dispatched `gh pr merge` on F4 story PRs (PG-MERGE-CLASSIFIER-F4) | Merge-authorization tooling | deferred — human workaround in place for rest of F4 |
+| 2 | AC-level enforcement of `DF-CANONICAL-FRAME-HOLDOUT-001` (Red Gate or Step-4.5 entry check for a canonical-frame holdout test on parser stories) — 2 occurrences (STORY-184, STORY-185); did NOT recur on STORY-186 — 3x codification threshold not triggered | Story-template / gate discipline | proposed — watch closed for this epic pending a future recurrence |
+| 4 | Root-cause or document the Claude Code permission classifier's intermittent blocking of agent-dispatched `gh pr merge` on F4 story PRs (PG-MERGE-CLASSIFIER-F4) | Merge-authorization tooling | deferred — human workaround in place for rest of F4 (STORY-186 merge again human-executed) |
+| 8 | Add an F2/F3 cross-BC consistency checkpoint that diffs paired/coupled BCs within a subsystem for state-model contradictions (not just per-BC self-consistency) — motivated by the BC-2.20.013-vs-2.20.014 contradiction escaping to STORY-186 per-story review | F2 spec-evolution / F3 story-decomposition gate discipline | proposed — see DRIFT-F2-CROSS-BC-CONSISTENCY-CHECK |
