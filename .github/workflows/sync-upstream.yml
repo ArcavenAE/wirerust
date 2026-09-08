@@ -4,8 +4,10 @@
 # SYNC_UPSTREAM_REPO repository variable is set (e.g. "Zious11/jira-cli" in a
 # downstream fork). Hosting it here means forks stay aligned without each one
 # carrying a divergent copy. Fork-local files that should survive a sync are
-# listed in .github/local-workflows.txt. See
-# docs/specs/fork-friendly-release-ops.md.
+# listed in .github/local-workflows.txt. The design this implements is
+# documented externally (it originated in the jira-cli project and is not
+# vendored here); commit-pinned so the link cannot drift:
+# https://github.com/ArcavenAE/jira-cli/blob/f85647bdef1bf77f85ce1440dcfd9b9dd0413093/docs/specs/fork-friendly-release-ops.md
 name: Sync Upstream
 
 on:
@@ -53,14 +55,22 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
       - name: Fetch upstream
+        # `vars.*` is operator-configured and not on the guard's
+        # format-constrained allowlist, so it is env-bound like any other
+        # non-allowlisted context.
+        env:
+          UPSTREAM_REPO: ${{ vars.SYNC_UPSTREAM_REPO }}
+          SYNC_BRANCH: ${{ matrix.branch }}
         run: |
-          git remote add upstream "https://github.com/${{ vars.SYNC_UPSTREAM_REPO }}.git"
-          git fetch upstream ${{ matrix.branch }} --tags
+          git remote add upstream "https://github.com/${UPSTREAM_REPO}.git"
+          git fetch upstream "${SYNC_BRANCH}" --tags
 
       - name: Check if sync needed
         id: check
+        env:
+          SYNC_BRANCH: ${{ matrix.branch }}
         run: |
-          if git merge-base --is-ancestor "upstream/${{ matrix.branch }}" HEAD; then
+          if git merge-base --is-ancestor "upstream/${SYNC_BRANCH}" HEAD; then
             echo "needed=false" >> "$GITHUB_OUTPUT"
           else
             echo "needed=true" >> "$GITHUB_OUTPUT"
@@ -69,6 +79,8 @@ jobs:
       - name: Merge upstream
         if: steps.check.outputs.needed == 'true'
         id: merge
+        env:
+          SYNC_BRANCH: ${{ matrix.branch }}
         run: |
           set -euo pipefail
 
@@ -79,7 +91,7 @@ jobs:
           fi
 
           # Attempt merge
-          if git merge "upstream/${{ matrix.branch }}" --no-edit; then
+          if git merge "upstream/${SYNC_BRANCH}" --no-edit; then
             echo "result=success" >> "$GITHUB_OUTPUT"
             exit 0
           fi
@@ -109,20 +121,30 @@ jobs:
 
       - name: Report unresolved conflict
         if: steps.merge.outputs.result == 'conflict'
+        # Every context expression is env-bound rather than interpolated into
+        # the run body. The conflicted-file list is derived from upstream
+        # content, and this job holds `contents: write` plus the sync deploy
+        # key, so an inline `${{ }}` here would be a shell-injection sink
+        # (CWE-94/CWE-78) reachable through a compromised operator-configured
+        # upstream. The branch name is bound for the same reason and for
+        # consistency with the workflow's stated posture.
+        env:
+          SYNC_BRANCH: ${{ matrix.branch }}
+          CONFLICTED_FILES: ${{ steps.merge.outputs.files }}
         run: |
           {
-            echo "# :warning: Upstream sync conflict on \`${{ matrix.branch }}\`"
+            echo "# :warning: Upstream sync conflict on \`${SYNC_BRANCH}\`"
             echo
             echo "Automated upstream sync hit merge conflicts in non-protected files."
             echo
-            echo "**Branch:** \`${{ matrix.branch }}\`"
-            echo "**Conflicted files:** \`${{ steps.merge.outputs.files }}\`"
+            echo "**Branch:** \`${SYNC_BRANCH}\`"
+            echo "**Conflicted files:** \`${CONFLICTED_FILES}\`"
             echo
             echo "## Resolve manually"
             echo '```sh'
             echo 'git fetch upstream'
-            echo 'git checkout ${{ matrix.branch }}'
-            echo 'git merge upstream/${{ matrix.branch }}'
+            echo "git checkout ${SYNC_BRANCH}"
+            echo "git merge upstream/${SYNC_BRANCH}"
             echo '# resolve conflicts (cherry-pick upstream improvements,'
             echo '# keep fork hardening; do NOT add to local-workflows.txt)'
             echo 'git push'
@@ -138,8 +160,10 @@ jobs:
 
       - name: Push branch
         if: steps.merge.outputs.result == 'success'
+        env:
+          SYNC_BRANCH: ${{ matrix.branch }}
         run: |
-          git push origin ${{ matrix.branch }}
+          git push origin "${SYNC_BRANCH}"
 
       - name: Sync tags
         run: |

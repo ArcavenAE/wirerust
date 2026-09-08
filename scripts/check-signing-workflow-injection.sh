@@ -16,7 +16,12 @@
 # to extract run: block bodies. A naive line-oriented grep is INSUFFICIENT
 # (cannot delimit run: scope, misses ${{ split across lines in block scalars).
 #
-# SCOPE: both sign-and-publish.yml and backfill-release.yml.
+# SCOPE: sign-and-publish.yml and backfill-release.yml are REQUIRED (each must
+# yield at least one in-scope job; zero is a broken-detection sentinel). Every
+# other workflow in .github/workflows/ is DISCOVERED and scanned on the same
+# structural criteria, with zero in-scope jobs treated as the normal case
+# rather than a sentinel. Nothing has to be added to a list for a workflow to
+# be checked: meeting the criteria below is what puts it in scope.
 # Scope is COMPUTED STRUCTURALLY per-job — NOT from a hardcoded job-name list.
 # A job is in scope when it meets ANY of:
 #   (a) the job body contains any `secrets.*` reference (in any key under the job),
@@ -51,7 +56,7 @@
 # (proves the detector is not a no-op per TD-VSDD-057 false-green prevention).
 #
 # USAGE:
-#   scripts/check-signing-workflow-injection.sh            # scan hardened workflows
+#   scripts/check-signing-workflow-injection.sh            # scan required + discovered
 #   scripts/check-signing-workflow-injection.sh --self-test # run negative fixture
 
 set -euo pipefail
@@ -436,19 +441,67 @@ def main():
         run_self_test()
         return  # run_self_test exits directly
 
-    # Expect exactly 2 positional file arguments
-    files = [a for a in args if not a.startswith('--')]
-    if len(files) < 2:
-        print("Usage: check-signing-workflow-injection.sh [sign-and-publish.yml] [backfill-release.yml]",
+    # Positional arguments are the REQUIRED files: each must yield at least
+    # one in-scope job, and zero is the broken-detection sentinel.
+    #
+    # --discover <dir> adds every other workflow in <dir> to the scan. Those
+    # are DISCOVERED files: a workflow that handles no secrets and holds no
+    # write permission legitimately has zero in-scope jobs, so the sentinel
+    # does not apply to them. This is what closes the scope gap that let
+    # sync-upstream.yml hold `contents: write` plus a deploy key while never
+    # being scanned. A workflow only has to meet the in-scope criteria to be
+    # checked; nobody has to remember to add it to a list.
+    required = []
+    discover_dirs = []
+    i = 0
+    while i < len(args):
+        a = args[i]
+        if a == '--discover':
+            # Consume the directory operand so it can never be mistaken for a
+            # required positional; that mistake made the directory itself a
+            # scan target and produced an "Is a directory" read error.
+            if i + 1 >= len(args):
+                print("ERROR: --discover requires a directory argument", file=sys.stderr)
+                sys.exit(2)
+            discover_dirs.append(args[i + 1])
+            i += 2
+            continue
+        if a.startswith('--'):
+            i += 1
+            continue
+        required.append(a)
+        i += 1
+
+    if len(required) < 2:
+        print("Usage: check-signing-workflow-injection.sh <required.yml> <required.yml> "
+              "[--discover <workflow-dir>]",
               file=sys.stderr)
         sys.exit(2)
 
-    sign_workflow, backfill_workflow = files[0], files[1]
+    discovered = []
+    seen = {os.path.realpath(f) for f in required}
+    for d in discover_dirs:
+        try:
+            names = sorted(os.listdir(d))
+        except OSError as e:
+            print(f"ERROR: Cannot list {d}: {e}", file=sys.stderr)
+            sys.exit(2)
+        for name in names:
+            if not name.endswith(('.yml', '.yaml')):
+                continue
+            full = os.path.join(d, name)
+            real = os.path.realpath(full)
+            if real in seen:
+                continue
+            seen.add(real)
+            discovered.append(full)
 
     total_run_blocks = 0
     total_expressions = 0
     all_flagged = []
-    workflow_files = [sign_workflow, backfill_workflow]
+    workflow_files = list(required) + discovered
+    required_set = {os.path.realpath(f) for f in required}
+    discovered_in_scope = 0
 
     for filepath in workflow_files:
         fname = os.path.basename(filepath)
@@ -467,15 +520,25 @@ def main():
 
         in_scope_count, rb, te, flagged, in_scope_jobs = scan_workflow_doc(doc, fname)
 
-        # Fail-closed: zero in-scope jobs is a sentinel for broken detection
+        is_required = os.path.realpath(filepath) in required_set
+
+        # Fail-closed, for REQUIRED files only: zero in-scope jobs is a
+        # sentinel for broken detection. A discovered workflow with no
+        # secrets and no write permission is expected to score zero and is
+        # simply skipped.
         if in_scope_count == 0:
-            print(f"ERROR: {fname}: structural scope detection found ZERO in-scope jobs.",
-                  file=sys.stderr)
-            print(f"  This is a sentinel for broken detection (e.g. renamed jobs, empty workflow).",
-                  file=sys.stderr)
-            print(f"  Each workflow that handles secrets/signing MUST have at least one in-scope job.",
-                  file=sys.stderr)
-            sys.exit(2)
+            if is_required:
+                print(f"ERROR: {fname}: structural scope detection found ZERO in-scope jobs.",
+                      file=sys.stderr)
+                print(f"  This is a sentinel for broken detection (e.g. renamed jobs, empty workflow).",
+                      file=sys.stderr)
+                print(f"  Each workflow that handles secrets/signing MUST have at least one in-scope job.",
+                      file=sys.stderr)
+                sys.exit(2)
+            continue
+
+        if not is_required:
+            discovered_in_scope += 1
 
         total_run_blocks += rb
         total_expressions += te
@@ -488,7 +551,9 @@ def main():
         print(f"    In-scope: {scope_summary}")
 
     print()
-    print(f"Summary: scanned {total_run_blocks} run-blocks across {len(workflow_files)} files, "
+    print(f"Summary: scanned {total_run_blocks} run-blocks across "
+          f"{len(required)} required + {discovered_in_scope} discovered in-scope file(s) "
+          f"({len(discovered)} discovered file(s) examined), "
           f"{total_expressions} total ${{{{}}}} expressions scanned, "
           f"{len(all_flagged)} inline high-risk expansion(s) flagged")
 
@@ -504,7 +569,8 @@ def main():
         print("         HEAD_BRANCH: ${{ github.event.workflow_run.head_branch }}")
         print("       run: |")
         print('         TAG="$HEAD_BRANCH"')
-        print("     See docs/specs/fork-friendly-release-ops.md § 'No inline context data'")
+        print("     Spec: 'No inline context data in shell run-blocks (CWE-77)' in")
+        print("     https://github.com/ArcavenAE/jira-cli/blob/f85647bdef1bf77f85ce1440dcfd9b9dd0413093/docs/specs/fork-friendly-release-ops.md")
         sys.exit(1)
 
     print("PASS: no inline high-risk expansions found in run: bodies of in-scope jobs.")
@@ -520,5 +586,6 @@ if [ "$SELF_TEST_MODE" = "true" ]; then
     run_python_guard --self-test
 else
     echo "check-signing-workflow-injection: scanning signing workflow files..."
-    run_python_guard "$SIGN_WORKFLOW" "$BACKFILL_WORKFLOW"
+    run_python_guard "$SIGN_WORKFLOW" "$BACKFILL_WORKFLOW" \
+        --discover "${REPO_ROOT}/.github/workflows"
 fi
