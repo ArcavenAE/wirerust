@@ -176,3 +176,18 @@ Prior checkpoints archived to `cycles/feature-iec104/session-checkpoints.md` and
 **Superseded by:** D-567 pre-STORY-187 spec pass checkpoint (current, see STATE.md). Session resumed from wrap-pause; ran the pre-STORY-187 E-23 spec-drift remediation pass (BC-2.20.014 v1.2, VP-050/055 rescope, E-23 rehash) this burst; next dispatch is the FIX-STORY186-ATBOUND-RELABEL fix PR, then STORY-187 (wave 90).
 
 ---
+
+## Session Resume Checkpoint (2026-09-24) — D-567 pre-STORY-187 spec pass COMPLETE
+
+**D-567 pre-STORY-187 spec pass COMPLETE (2026-09-24) — factory-only, no code branch. E-23 spec-drift remediation: BC-2.20.014 v1.1→v1.2 + BC-2.20.004 v1.0→v1.1, VP-050/055 rescoped, PRD v1.62, BC-INDEX v2.38.3, ARCH-INDEX v2.25, VP-INDEX v2.49; STORY-184/186/194 version-bumped; all 11 E-23 stories rehashed 11/11 MATCH; STORY-INDEX v4.29. DRIFT-STORY186-INPUT-HASH-ADR-SELF-REFERENCE RESOLVED; DRIFT-F2-CROSS-BC-CONSISTENCY-CHECK stays OPEN (recurrence noted). New carry-forward FIX-STORY186-ATBOUND-RELABEL (fix PR before STORY-187). develop=`294174f5` (unchanged), main=`46ebd6e3` (unchanged), `stories_delivered`=123 (unchanged). RESUME: FIX-STORY186-ATBOUND-RELABEL fix PR on develop, then `/vsdd-factory:next-step` → STORY-187 (wave 90).**
+
+- **Date + position:** 2026-09-24; F4 IN PROGRESS 3/11 delivered; last delivered STORY-186 (PR #470, develop 294174f5); pre-STORY-187 spec pass complete (D-567); NEXT: FIX-STORY186-ATBOUND-RELABEL fix PR on develop, then STORY-187 (wave 90, S7comm Flow State Completion, Four-Way protocol_id Dispatch Skeleton, and parse_s7comm_header Pure-Core Parser). Epic E-23, waves 87-97, 11 stories/71 pts total.
+- **Convergence counter:** n/a (not mid-convergence; D-567 was a factory-only spec pass validated by 3 consistency-validator passes, not an adversarial-review loop; STORY-187's per-story adversarial loop not yet dispatched).
+- **In-flight work:** NONE on develop — no open PRs, no story worktrees. `FIX-STORY186-ATBOUND-RELABEL` fix PR not yet started (next dispatch).
+- **Pending human decisions / blockers:** none open. `DRIFT-F2-CROSS-BC-CONSISTENCY-CHECK` (OPEN, recurrence noted this burst) + `SEC-STORY193-ON-FLOW-CLOSE-EVICTION` + `PG-CANONICAL-HOLDOUT-NOT-AC-ENFORCED-WATCH` carried forward (target STORY-187/193). Infra issues (nested-subagent messaging deadlock, idle-echo storm, adversarial-review skill fork wedge) filed via SendFeedback — awaiting user `/feedback` review, not a pipeline blocker. #451 (DEFERRED, DIRTY/policy contradiction) and #407 (`CHANGES_REQUESTED` posted, OPEN) carried forward unaffected. `PG-MERGE-CLASSIFIER-F4` means the next story merge (STORY-187) again requires a human-executed `gh pr merge`, not agent-dispatched.
+- **WIP branch list with SHAs:** none.
+- **Resume command:** `FIX-STORY186-ATBOUND-RELABEL` fix PR on `develop` first, then `/vsdd-factory:next-step` (routes from STATE.md's EXACT RESUME POINT) → dispatch `STORY-187` (wave 90). `rehydrate-wave` will still hard-block with `RehydrationError` (no `wave-state.yaml` for this factory-only spec-pass burst) — that is expected; fall back to `next-step`, or run `/vsdd-factory:wave-handoff` on wave 89 first if wave-scoped rehydration is desired.
+
+**Superseded by:** D-568 FIX-STORY186-ATBOUND-RELABEL DELIVERED checkpoint (current, see STATE.md). PR #473 squash-merged to develop as 47951b7a; next dispatch is STORY-187 (wave 90).
+
+---

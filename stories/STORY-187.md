@@ -36,7 +36,7 @@ inputs:
   - .factory/specs/behavioral-contracts/ss-21/BC-2.21.009.md
   - .factory/specs/architecture/ARCH-INDEX.md
   - docs/adr/0014-s7comm-iso-on-tcp-stream-dispatch-and-parser-design.md
-input-hash: "c1dd565"
+input-hash: "315fdf1"
 ---
 
 > **tdd_mode:** `strict` — full TDD Iron Law enforced.

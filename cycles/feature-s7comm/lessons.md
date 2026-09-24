@@ -1,10 +1,10 @@
 ---
 document_type: lessons-learned
 level: ops
-version: "1.1"
+version: "1.2"
 status: in-progress
 producer: state-manager
-timestamp: 2026-09-24T00:00:00Z
+timestamp: 2026-09-24T19:45:32Z
 cycle: "feature-s7comm"
 inputs: [STATE.md]
 input-hash: "[live-state]"
@@ -165,6 +165,18 @@ _(none recorded this cycle)_
    validation first.
    _Discovered: D-567 pre-STORY-187 spec pass (fresh-context consistency-validator audit), 2026-09-24._
 
+10. **[accepted-residual] FIX-STORY186-ATBOUND-RELABEL PR #473 deferred NITs F3/F5/F6** —
+    three NIT-severity findings from the fix PR's cycle-1 pr-review were deferred by agreement
+    rather than fixed same-burst: **F3** — the new `test_BC_2_20_014_live_near_bound_residual_
+    single_call` test does not re-check the overflow flag after delivering the final byte, and
+    the new AC-186-004(b) tests carry no S2C-direction coverage (only C2S exercised); **F5** —
+    commit `34b721a0` was typed `fix:` when its content was documentation-only and should have
+    been `docs:`; **F6** — the `on_data` overflow-check doc comment carries redundant phrasing
+    left over from the earlier wording. None block correctness; F1 MINOR and F2/F4 NIT from the
+    same review cycle were fixed in `fd253c3c`. Non-blocking; flagged for a future test-coverage
+    pass (F3) or maintenance sweep (F5/F6) rather than a second fix-PR cycle.
+    _Discovered: FIX-STORY186-ATBOUND-RELABEL PR #473 review cycle 1, 2026-09-24._
+
 ## Infrastructure-Level
 
 1. **[infra] Nested-subagent messaging deadlock** — pr-manager (dispatched as a subagent for
@@ -192,6 +204,15 @@ _(none recorded this cycle)_
    Harness/runtime fork-lifecycle issue. Already filed via SendFeedback — no further
    factory-side action needed this cycle.
    _Discovered: STORY-186 per-story adversarial review dispatch, 2026-09-07._
+
+4. **[infra] demo-recorder dispatch stall on stream watchdog** — a demo-recorder dispatch during
+   the FIX-STORY186-ATBOUND-RELABEL delivery stalled for 600s against the stream watchdog with
+   no files written (no partial `.tape`/screenshot output on disk). Succeeded on retry once the
+   dispatch was given a prebuild step and bounded render timeouts. Harness/runtime dispatch-
+   timeout issue, not a factory logic defect; recorded here as a mitigation note for future
+   demo-recorder dispatches (prebuild + bounded render timeouts) rather than filed as a
+   standalone defect this cycle.
+   _Discovered: FIX-STORY186-ATBOUND-RELABEL demo-evidence re-render, 2026-09-24._
 
 ## Policy Candidates
 

@@ -37,7 +37,7 @@ inputs:
   - .factory/specs/architecture/ARCH-INDEX.md
   - docs/adr/0014-s7comm-iso-on-tcp-stream-dispatch-and-parser-design.md
   - .factory/research/s7comm-mitre-ics-tagging.md
-input-hash: "66f67e2"
+input-hash: "6c507d9"
 ---
 
 > **tdd_mode:** `strict` — full TDD Iron Law enforced.
