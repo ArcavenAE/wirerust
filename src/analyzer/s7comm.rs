@@ -61,9 +61,19 @@ use crate::reassembly::handler::Direction;
 ///
 /// Derived exactly from the TPKT `length` field's own maximum representable value
 /// (`u16::MAX`, RFC 1006 §6) — not from COTP's single-byte Length Indicator (max
-/// 254). The overflow comparison is strict `>`, never `>=` (BC-2.20.014 Edge Case
-/// EC-001 / Invariant 1): a residual of exactly 65,535 bytes from a still-incomplete,
-/// conformant `length = 65,535` frame is legitimate, not overflow.
+/// 254). The overflow comparison is strict `>`, never `>=` (BC-2.20.014 Invariant 1).
+///
+/// Under this module's walk-first framing (BC-2.20.013), the largest residual
+/// actually reachable via `on_data` is **65,534** bytes, not 65,535: a
+/// declared-`length = 65,535` TPKT frame that is fully available is extracted as a
+/// complete frame on the walk, not stashed to carry, so the residual can equal but
+/// never exceed 65,534 (BC-2.20.014 Invariant 1 / Edge Case EC-001; see also the
+/// `on_data` call-entry comment below, Invariant 5). A residual of exactly 65,535 —
+/// the literal value this constant guards against — is therefore unreachable via
+/// real traffic; it is exercised only by synthetic tests that inject the carry
+/// buffer directly (BC-2.20.014 Edge Case EC-006). The overflow branch below is
+/// retained as defense-in-depth against a future design regression, not as a
+/// currently-live detection path.
 pub const MAX_S7_ISO_ON_TCP_CARRY_BYTES: usize = 65_535;
 
 // ---------------------------------------------------------------------------
@@ -165,7 +175,10 @@ impl S7commAnalyzer {
             // frame-walk loop below stashes at most a declared-but-incomplete TPKT
             // frame to carry, and a TPKT `length` field is a `u16` (max 65,535 —
             // `MAX_S7_ISO_ON_TCP_CARRY_BYTES`), so the residual can equal but never
-            // exceed the bound; a bad-version-byte reject resyncs 1 byte at a time
+            // exceed 65,534 — one byte short of that literal bound, since a residual
+            // of exactly 65,535 would itself have been a complete, dispatchable frame
+            // on the walk that produced it (walk-first framing, BC-2.20.014
+            // Invariant 1); a bad-version-byte reject resyncs 1 byte at a time
             // rather than accumulating carry. BC-2.20.014 v1.1 formalizes this as
             // Invariant 5: the directional carry is provably `<= 65,534` bytes
             // on entry to `on_data` (strictly less than `MAX_S7_ISO_ON_TCP_CARRY_BYTES`,
