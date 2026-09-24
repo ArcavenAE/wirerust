@@ -1,10 +1,10 @@
 ---
 document_type: lessons-learned
 level: ops
-version: "1.0"
+version: "1.1"
 status: in-progress
 producer: state-manager
-timestamp: 2026-09-07T02:15:00Z
+timestamp: 2026-09-24T00:00:00Z
 cycle: "feature-s7comm"
 inputs: [STATE.md]
 input-hash: "[live-state]"
@@ -84,7 +84,7 @@ _(none recorded this cycle)_
    STORY-187 spec-review checkpoint rather than a same-burst fix.
    _Discovered: STORY-186 PR #470 review, 2026-09-07._
 
-6. **[accepted-residual] BC-2.20.014 stale "OPEN ITEM (2026-09-07)" forward-reference** —
+6. **[accepted-residual] BC-2.20.014 stale "OPEN ITEM (2026-09-07)" forward-reference — RESOLVED (D-567, 2026-09-24).** —
    `BC-2.20.014`'s v1.1 text still carries an "OPEN ITEM (2026-09-07)" marker requesting the
    ADR-0014 reconciliation note that documents the defense-in-depth reclassification. That note
    **WAS** added (`docs/adr/0014-s7comm-iso-on-tcp-stream-dispatch-and-parser-design.md`,
@@ -95,6 +95,11 @@ _(none recorded this cycle)_
    trigger a canonical input-hash rehash cascade across every story/BC that cites it, on top of
    the wave just merged.
    _Discovered: STORY-186 PR #470 review, 2026-09-07._
+   **Resolution (D-567, 2026-09-24, pre-STORY-187 spec pass):** the OPEN ITEM marker was cleared
+   as part of `BC-2.20.014` v1.1→v1.2 (product-owner, consistency-validator-confirmed clean after
+   one MAJOR fixed). `STORY-186` rehashed fresh (`259af26`) in the same burst's full E-23 rehash
+   sweep; `--scan` confirms MATCH. The anticipated rehash cascade landed together with the
+   substantive fix rather than being deferred further.
 
 7. **[accepted-residual] BC-2.20.014 canonical-vector "At-bound, legitimate" row self-inconsistency**
    — `BC-2.20.014`'s canonical test-vector table includes an "At-bound, legitimate" row
@@ -107,6 +112,14 @@ _(none recorded this cycle)_
    Non-blocking; flagged for a spec-vector precision pass alongside item 6 above (same BC file,
    same deferred-edit rationale — avoid a rehash cascade on the just-merged wave).
    _Discovered: STORY-186 adversarial review, 2026-09-07._
+   **Resolution (D-567, 2026-09-24, pre-STORY-187 spec pass):** the unrealizable 65,535-byte
+   "still incomplete" residual in `BC-2.20.014`'s canonical vector was corrected to the
+   realizable 65,534-byte bound (EC-001), with EC-001/EC-002 differentiated and a new EC-006
+   added for the synthetic literal-65,535 case; VP table rows 1-3 marked RESOLVED and folded
+   into VP-050 (no new VP needed). `BC-2.20.014` v1.1→v1.2. Fresh-context consistency-validator
+   audit (3 passes, final clean after one MAJOR fixed) confirmed the correction is internally
+   consistent and fully propagated across `VP-INDEX.md`, `verification-architecture.md`,
+   `verification-coverage-matrix.md`, `ARCH-INDEX.md`, and `specs/prd.md`.
 
 8. **[process-gap] Inherited BC-2.20.013-vs-2.20.014 spec contradiction escaped F2/F3 review** —
    `BC-2.20.013` (walk-first resync CONSUMES garbage bytes on a bad version byte) and
@@ -128,6 +141,29 @@ _(none recorded this cycle)_
    `cycles/feature-s7comm/drift-items-and-carry-forwards.md`. Per DF-VALIDATION-001, any GitHub
    issue filed from this finding requires research-agent validation first.
    _Discovered: STORY-186 per-story adversarial pass 1, 2026-09-07._
+
+9. **[process-gap] BC reclassification did not propagate to VP-INDEX/verification-architecture/
+   verification-coverage-matrix/PRD** — the 2026-09-07 `BC-2.20.013`/`BC-2.20.014` v1.0→v1.1
+   defense-in-depth reconciliation (item 8 above, `DRIFT-F2-CROSS-BC-CONSISTENCY-CHECK`) updated
+   the two BC files but did not propagate to the four downstream verification/spec artifacts that
+   cite the affected VPs (`VP-INDEX.md`, `verification-architecture.md`,
+   `verification-coverage-matrix.md`, `specs/prd.md` narrative + RTM bullets for VP-050/VP-055) —
+   they continued to describe the pre-reconciliation scope for over two weeks, undetected until a
+   fresh-context consistency-validator audit during the D-567 pre-STORY-187 spec pass (2026-09-24)
+   caught the staleness while reconciling `BC-2.20.014` v1.1→v1.2. This is the **second**
+   occurrence of the `DRIFT-F2-CROSS-BC-CONSISTENCY-CHECK` failure class in this epic — same root
+   cause (a BC-level spec edit not triggering a mandatory downstream-artifact sweep), one hop
+   further downstream (VP/arch/PRD artifacts rather than a sibling BC). Per the Cycle-Closing
+   Checklist, a recurring process-gap needs a follow-up story or a justified deferral; disposition
+   here is a **deferral** — tracked against the existing `DRIFT-F2-CROSS-BC-CONSISTENCY-CHECK`
+   drift item (same root cause, no new drift item opened) rather than a dedicated follow-up story,
+   because the STORY-187 spec pass already found and fixed this occurrence in the same burst that
+   discovered it. Target: fold into the future F2 process improvement (extend the consistency-audit
+   protocol to sweep VP-INDEX/verification-architecture/verification-coverage-matrix/PRD whenever
+   a BC's VP allocation or scope changes, not just sibling BCs) at the feature-s7comm cycle close.
+   Per DF-VALIDATION-001, any GitHub issue filed from this finding requires research-agent
+   validation first.
+   _Discovered: D-567 pre-STORY-187 spec pass (fresh-context consistency-validator audit), 2026-09-24._
 
 ## Infrastructure-Level
 
@@ -164,4 +200,5 @@ _(none recorded this cycle)_
 | 1 | Extend `bin/check-green-doc-tense` TIER-1 patterns with the "MUST FAIL" / "until the STORY-NNN implementer delivers" phrase shapes | Doc-tense gate coverage | proposed |
 | 2 | AC-level enforcement of `DF-CANONICAL-FRAME-HOLDOUT-001` (Red Gate or Step-4.5 entry check for a canonical-frame holdout test on parser stories) — 2 occurrences (STORY-184, STORY-185); did NOT recur on STORY-186 — 3x codification threshold not triggered | Story-template / gate discipline | proposed — watch closed for this epic pending a future recurrence |
 | 4 | Root-cause or document the Claude Code permission classifier's intermittent blocking of agent-dispatched `gh pr merge` on F4 story PRs (PG-MERGE-CLASSIFIER-F4) | Merge-authorization tooling | deferred — human workaround in place for rest of F4 (STORY-186 merge again human-executed) |
-| 8 | Add an F2/F3 cross-BC consistency checkpoint that diffs paired/coupled BCs within a subsystem for state-model contradictions (not just per-BC self-consistency) — motivated by the BC-2.20.013-vs-2.20.014 contradiction escaping to STORY-186 per-story review | F2 spec-evolution / F3 story-decomposition gate discipline | proposed — see DRIFT-F2-CROSS-BC-CONSISTENCY-CHECK |
+| 8 | Add an F2/F3 cross-BC consistency checkpoint that diffs paired/coupled BCs within a subsystem for state-model contradictions (not just per-BC self-consistency) — motivated by the BC-2.20.013-vs-2.20.014 contradiction escaping to STORY-186 per-story review | F2 spec-evolution / F3 story-decomposition gate discipline | proposed — see DRIFT-F2-CROSS-BC-CONSISTENCY-CHECK; recurred D-567 one hop downstream (VP/arch/PRD), see lesson 9 |
+| 9 | Extend the same F2/F3 consistency checkpoint (lesson 8's proposed policy) to sweep VP-INDEX/verification-architecture/verification-coverage-matrix/PRD whenever a BC's VP allocation or scope changes, not just sibling BCs — motivated by the D-567 finding that the D-565 BC-2.20.013/014 reconciliation itself did not propagate to those four artifacts | F2 spec-evolution gate discipline | deferred (D-567) — tracked against DRIFT-F2-CROSS-BC-CONSISTENCY-CHECK (same root cause, no new drift item); target feature-s7comm cycle close |

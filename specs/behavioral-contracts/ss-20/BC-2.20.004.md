@@ -1,10 +1,10 @@
 ---
 document_type: behavioral-contract
 level: L3
-version: "1.0"
+version: "1.1"
 status: draft
 producer: product-owner
-timestamp: 2026-09-06T00:00:00Z
+timestamp: 2026-09-24T00:00:00Z
 phase: f2
 origin: greenfield
 extracted_from: null
@@ -13,7 +13,10 @@ subsystem: SS-20
 capability: CAP-20
 lifecycle_status: active
 introduced: feature-s7comm
-modified: []
+modified:
+  - version: "1.1"
+    date: 2026-09-24
+    change: "STORY-187 spec pass; fresh-context consistency audit finding (MINOR). Invariant 2 and EC-002 conflated the TPKT length field's representable ceiling (65,535 — correct, this BC's own subject matter) with the carry buffer's maximum reachable residual (65,534 — a different BC's quantity, per BC-2.20.013's Reconciliation Note and BC-2.20.014 v1.2 Invariant 1/EC-001). Reworded both to state the two numbers distinctly: `length == 65,535` is the correct maximum-representable value this BC accepts, but a carry residual of the full 65,535 bytes is never reachable via on_data — the largest reachable residual is 65,534 bytes, one byte short of a complete frame. Wording only; no change to preconditions, postconditions, invariants, or accept/reject behavior."
 deprecated: null
 deprecated_by: null
 replacement: null
@@ -67,8 +70,13 @@ accept path composing the three reject paths of BC-2.20.001/002/003.
    value representable by the `u16` length field; `parse_tpkt_header` performs no
    additional upper-bound check beyond what the type system already guarantees. A
    `length` of exactly `65535` (the maximum-representable, "oversized" edge case called
-   out in the F2 authoring scope) is a legal accept — see BC-2.20.014 for why this
-   maximum coincides exactly with the carry-buffer ceiling.
+   out in the F2 authoring scope) is a legal accept. This is a distinct quantity from
+   the carry buffer's maximum *reachable* residual: `MAX_S7_ISO_ON_TCP_CARRY_BYTES` is
+   set to `65,535` (BC-2.20.014) because it must be `>=` this field's ceiling, but a
+   `length == 65535` frame that is fully available is extracted as a complete frame, not
+   stashed to carry — so the carry buffer's largest residual actually reachable via
+   `on_data` is `65,534` bytes, one byte short of this maximum (BC-2.20.013
+   Reconciliation Note; BC-2.20.014 v1.2 Invariant 1/EC-001).
 3. **Total ordering of the three reject paths**: BC-2.20.001 (too-short input),
    BC-2.20.002 (bad version), and BC-2.20.003 (length `< 7`) together with this BC's
    accept path are jointly exhaustive and mutually exclusive over all possible `data`
@@ -93,7 +101,7 @@ length ≥ 4 vs RFC-min-7" divergence rationale is retired and replaced by this 
 | ID | Description | Expected Behavior |
 |----|-------------|-------------------|
 | EC-001 | `length == 7` (exactly minimum — 4-byte TPKT header + 3-byte minimum COTP unit, RFC 1006 §6 conformant) | `Some(TpktHeader{version:3, length:7})` — the smallest legal TPKT packet |
-| EC-002 | `length == 65535` (maximum representable `u16` — "oversized-length-field" edge case) | `Some(TpktHeader{version:3, length:65535})` — accepted; stresses the carry buffer to its exact ceiling (BC-2.20.014) |
+| EC-002 | `length == 65535` (maximum representable `u16` — "oversized-length-field" edge case) | `Some(TpktHeader{version:3, length:65535})` — accepted; this is the TPKT length field's representable ceiling, which sets the carry buffer's overflow threshold (`MAX_S7_ISO_ON_TCP_CARRY_BYTES = 65,535`, BC-2.20.014); note that a carry *residual* of the full 65,535 bytes is not itself reachable via `on_data` — the largest reachable residual is 65,534 bytes, one byte short of a complete frame (BC-2.20.013 Reconciliation Note) |
 | EC-003 | `data[1]` (reserved byte) is a non-zero value, e.g. `0xFF` | Accepted identically to `data[1] == 0x00` — reserved byte is never validated |
 | EC-004 | `data.len() > length as usize` (more bytes delivered than the declared frame length — a second frame follows immediately) | `parse_tpkt_header` still returns `Some` for the first `length` bytes; the frame-walk loop advances the cursor by `length` and re-invokes on the remainder |
 | EC-005 | `data.len() == length as usize` exactly (single complete frame, no trailing bytes) | `Some(TpktHeader{..})`; no carry stash needed |

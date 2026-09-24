@@ -1,7 +1,7 @@
 ---
 document_type: prd
 level: L3
-version: "1.61"
+version: "1.62"
 status: draft
 producer: product-owner
 timestamp: 2026-09-06T00:00:00Z
@@ -424,6 +424,45 @@ supplements:
 > default (50/1s) — changed from 20, MEDIUM-confidence, human confirmation at F2 gate. See `.factory/phase-f2-spec-evolution/enip-prd-delta.md`
 > for full delta record. Added SS-17 rows to Section 7 RTM. Total BCs: 304 on disk → 329;
 > active: 304 → 328. BC-INDEX v1.73→v1.74.
+>
+> **Version 1.62 delta (2026-09-24 — STORY-187 spec pass; consistency audit title-sync):**
+> §2.20.C BC index row for BC-2.20.014 corrected: was still showing the BC's pre-v1.1 title
+> ("Carry Buffer Bounded at `MAX_S7_ISO_ON_TCP_CARRY_BYTES = 65,535`; Overflow Triggers
+> Clear-and-Resync With One T0814 Per Direction"), stale since BC-2.20.014's v1.1 defense-in-depth
+> reclassification (STORY-186 adversarial F-02/F-03, 2026-09-07). Synced verbatim to BC-2.20.014's
+> current canonical H1: "Carry-Overflow Bound (`MAX_S7_ISO_ON_TCP_CARRY_BYTES = 65,535`) and
+> T0814 Guard — Defense-in-Depth, Unreachable by Construction Under Walk-First Design." The
+> sibling row, BC-2.20.013, was already synced to its canonical H1 and required no change.
+> A full-PRD grep for other pre-reconciliation BC-2.20.013/014 title or description text found
+> no further instances of stale BC *titles* — the §2.20 narrative prose's references to the
+> `MAX_S7_ISO_ON_TCP_CARRY_BYTES = 65,535` constant describe the bound/threshold itself, not a
+> claim that a residual of exactly 65,535 bytes is reachable via `on_data`, and required no
+> title-level change. No BC/VP/ADR/CAP content, other indices, or input-hashes modified by this
+> delta — PRD title-sync only. No BC count change (441 on disk; 440 active).
+>
+> **CORRECTION (2026-09-24, same uncommitted burst — architect rescope of VP-050/VP-055,
+> VP-INDEX.md v2.49, verification-architecture.md v2.35):** the "no further instances" claim
+> immediately above is corrected — it was accurate only for stale BC *titles*, not for the
+> §2.20.C narrative's overflow-reaction *prose*. A real full-text sweep of `prd.md` (not
+> index/title-only) found the "On overflow, the offending direction's carry is CLEARED..."
+> paragraph (§2.20 narrative, TPKT/COTP reassembly subsection) presented the clear/resync/T0814
+> reaction as a live runtime behavior with no defense-in-depth/unreachable-via-`on_data` caveat,
+> and the adjoining "Formal verification" VP-050 bullet described VP-050 as covering "65,535-byte
+> overflow-clear-and-resync" directly, which overstated VP-050's rescoped scope (the overflow
+> guard's clear/resync/dedup mechanics are explicitly OUT OF SCOPE for VP-050 — defense-in-depth,
+> unreachable via `on_data`, exercised only by synthetic direct-field-injection unit tests; VP-050
+> itself now asserts only the REACHABLE-BOUND INVARIANT: `residual.len() <= 65,534` on every
+> `on_data`-reachable call sequence, and no T0814 finding is ever emitted via `on_data`). Both
+> passages corrected in place: the overflow-reaction paragraph now carries the defense-in-depth/
+> unreachable-via-`on_data` caveat, and the VP-050 bullet is rewritten to match VP-050's rescoped
+> clause (c); the VP-055 bullet is likewise corrected to state the fuzz harness's carry bound is
+> the `on_data`-reachable `<= 65,534` maximum, not the literal `65,535` guard-constant boundary,
+> and that it never emits a T0814 overflow finding. No other narrative statements in `prd.md`
+> presenting the S7comm/ISO-on-TCP overflow reaction as live were found in this sweep (the
+> generic §2.21 MITRE-catalog T0814 reuse listing is unrelated — it catalogs T0814 reuse
+> generically, not the carry-overflow call-site specifically). Folded into this v1.62 delta — no
+> version bump. No BC/VP/ADR/CAP content, other indices, or input-hashes modified by this
+> correction beyond the narrative text itself. No BC count change (441 on disk; 440 active).
 >
 > **Version 1.61 delta (2026-09-06 — feature-s7comm F2 spec-evolution, product-owner narrative/RTM
 > authorship closing spec-steward's flagged orphan #1 from the v1.60 registration burst):**
@@ -2545,6 +2584,16 @@ See `prd-supplements/error-taxonomy.md` for the complete E-xxx-NNN catalog.
 > CLEARED (never truncated) and the resync walk advances the cursor by exactly 1 byte per
 > iteration on a bad TPKT version byte (BC-2.20.015), emitting exactly one T0814
 > (Anomaly/Possible/Medium) per direction via a dedicated carry-overflow dedup flag (BC-2.20.014).
+> **This overflow reaction is defense-in-depth, not a live runtime detection under the current
+> design:** BC-2.20.013's walk-first frame-walk always extracts every complete TPKT frame before
+> stashing only the trailing partial-frame residual to carry, and BC-2.20.015's resync
+> sub-routine drains un-anchored garbage to fewer than 4 bytes before the end of every `on_data`
+> call — so the directional carry is bounded at ≤65,534 bytes by construction, and
+> `residual.len() > 65,535` can never be true on the real `on_data` data path (STORY-186
+> adversarial gate F-02, human ruling Option B — Defense-in-Depth, 2026-09-07). The clear/resync/
+> T0814 mechanics above are retained as a structural safeguard against future design drift (e.g.
+> if the walk-first or resync discipline regresses) and are exercised today only by synthetic
+> direct-field-injection unit tests, never via real `on_data` traffic — see BC-2.20.014.
 
 > **Licensing (ADR-014 Decision 4):** TPKT (RFC 1006) and COTP (ISO 8073 / ITU-T X.224) are
 > implemented directly from their open, freely-implementable specifications. No external
@@ -2557,9 +2606,18 @@ See `prd-supplements/error-taxonomy.md` for the complete E-xxx-NNN catalog.
 > bounds safety and TPDU-type exhaustiveness over all 16 high-nibble values (CR/CC/
 > DT-with-payload/DT-empty/13-value reject arm) plus the frozen verbatim `protocol_id` extraction
 > guarantee; traces BC-2.20.005..012). VP-050 (proptest P1, draft — walk-first-residual-bound
-> reassembly, directional carry isolation, 65,535-byte overflow-clear-and-resync, 1-byte
-> resync-cursor termination guarantee; traces BC-2.20.013..015). VP-055 (cargo-fuzz P1, draft —
-> combined TPKT→COTP→S7comm parse-chain no-panic fuzz harness, shared with SS-21; representative
+> reassembly, directional carry isolation, and RESCOPED (2026-09-24, STORY-187 spec pass;
+> VP-INDEX.md v2.49, verification-architecture.md v2.35) REACHABLE-BOUND INVARIANT: for every
+> finite `on_data` call sequence the directional residual is provably `<= 65,534` bytes and no
+> T0814 carry-overflow finding is ever emitted via `on_data` — the literal `65,535`-byte
+> overflow-clear-and-resync guard mechanics (clear, resync, dedup) are explicitly OUT OF SCOPE
+> for this on_data-driven proptest property (defense-in-depth, unreachable via `on_data` under
+> the current design) and are exercised only by synthetic direct-field-injection unit tests, not
+> VP-050; 1-byte resync-cursor termination guarantee; traces BC-2.20.013..015). VP-055
+> (cargo-fuzz P1, draft — combined TPKT→COTP→S7comm parse-chain no-panic fuzz harness, shared
+> with SS-21; directional carry buffers remain bounded at `<= 65,534` bytes (the on_data-reachable
+> maximum, not the literal `65,535` guard-constant boundary) with no T0814 overflow finding ever
+> emitted by the fuzz harness; representative
 > `source_bc` subset includes BC-2.20.001/005/013/014). VP-004 (Kani, dispatcher `classify()`,
 > P0) amended to add BC-2.20.016 and BC-2.05.013 as `source_bc` (Rule 9 port-102 dispatch
 > precedence oracle now has a concrete SS-05 anchor).
@@ -2591,7 +2649,7 @@ See `prd-supplements/error-taxonomy.md` for the complete E-xxx-NNN catalog.
 | BC ID | Title | Priority | Origin |
 |-------|-------|----------|--------|
 | BC-2.20.013 | TPKT Frames Spanning TCP Segment Boundaries Are Reassembled via Directional Carry Buffers Using Walk-First, Residual-Bound Semantics | P1 | feature-s7comm |
-| BC-2.20.014 | Carry Buffer Bounded at `MAX_S7_ISO_ON_TCP_CARRY_BYTES = 65,535`; Overflow Triggers Clear-and-Resync With One T0814 Per Direction | P1 | feature-s7comm |
+| BC-2.20.014 | Carry-Overflow Bound (`MAX_S7_ISO_ON_TCP_CARRY_BYTES = 65,535`) and T0814 Guard — Defense-in-Depth, Unreachable by Construction Under Walk-First Design | P1 | feature-s7comm |
 | BC-2.20.015 | Resync Anchor Advances Exactly 1 Byte Per Iteration on a Bad TPKT Version Byte (Never 2) | P1 | feature-s7comm |
 
 #### 2.20.D Frozen Module Boundary (Group D — SS-20)

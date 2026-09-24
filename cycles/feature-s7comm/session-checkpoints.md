@@ -1,10 +1,10 @@
 ---
 document_type: session-checkpoints
 level: ops
-version: "1.0"
+version: "1.1"
 status: archive
 producer: state-manager
-timestamp: 2026-09-06T21:15:00Z
+timestamp: 2026-09-24T00:00:00Z
 cycle: "feature-s7comm"
 inputs: [STATE.md]
 input-hash: "[live-state]"
@@ -158,6 +158,21 @@ Prior checkpoints archived to `cycles/feature-iec104/session-checkpoints.md` and
 - **WIP branch list with SHAs:** none — STORY-186 feature branch was merged and deleted; STORY-184/185 feature branches were merged and deleted.
 - **Resume command:** `/vsdd-factory:rehydrate-wave` then `/vsdd-factory:next-step`.
 
-**Superseded by:** SESSION-WRAP-PAUSE-2026-09-07 (D-566) checkpoint (current, see STATE.md). Factory paused per human wrap request after this burst; no work in-flight, next dispatch is STORY-187 (wave 90).
+**Superseded by:** D-567 pre-STORY-187 spec pass checkpoint (current, see STATE.md). Factory paused per human wrap request after this burst; no work in-flight, next dispatch was STORY-187 (wave 90).
+
+---
+
+## Session Resume Checkpoint (2026-09-07) — SESSION-WRAP-PAUSE-2026-09-07 (D-566)
+
+**SESSION-WRAP-PAUSE-2026-09-07 (D-566) — factory paused after STORY-186 DELIVERED (D-565). 3/11 F4 stories delivered (STORY-184 #466 wave 87, STORY-185 #467 wave 88, STORY-186 #470 wave 89, all merged to develop 294174f5). No work in-flight — STORY-186 fully delivered/merged/cleaned; worktree+branch cleaned up; factory-artifacts in sync. Pipeline PAUSED for session `/clear`. develop=`294174f5`, main=`46ebd6e3` (unchanged), `stories_delivered`=123. RESUME: `/vsdd-factory:rehydrate-wave` then `/vsdd-factory:next-step`.**
+
+- **Date + position:** 2026-09-07; F4 IN PROGRESS 3/11 delivered; last delivered STORY-186 (PR #470, develop 294174f5); NEXT STORY-187 (wave 90, S7comm Flow State Completion, Four-Way protocol_id Dispatch Skeleton, and parse_s7comm_header Pure-Core Parser). Epic E-23, waves 87-97, 11 stories/71 pts total.
+- **Convergence counter:** n/a (not mid-convergence; STORY-186's per-story adversarial loop converged 3/3 and merged; STORY-187's loop not yet dispatched).
+- **In-flight work:** NONE — STORY-186 fully delivered/merged/cleaned (worktree + branch removed); no open PRs for this cycle; no sub-agent steps abandoned.
+- **Pending human decisions / blockers:** none open. Accepted-residual NITs (`BC-2.20.014` stale "OPEN ITEM" marker; `ADR-014`-vs-`ADR-0014` naming NIT) + `DRIFT-F2-CROSS-BC-CONSISTENCY-CHECK` + the `STORY-193` on-flow-close eviction security forward-look already logged (target STORY-187/193). Infra issues (nested-subagent messaging deadlock, idle-echo storm, adversarial-review skill fork wedge) filed via SendFeedback — awaiting user `/feedback` review, not a pipeline blocker. #451 (DEFERRED, DIRTY/policy contradiction) and #407 (`CHANGES_REQUESTED` posted, OPEN) carried forward unaffected.
+- **WIP branch list with SHAs:** none — STORY-186 branch merged + deleted; STORY-184/185 feature branches were merged and deleted.
+- **Resume command:** `/vsdd-factory:rehydrate-wave` then `/vsdd-factory:next-step` (note: `rehydrate-wave` will hard-block with `RehydrationError` because this is a SESSION-WRAP pause, not a wave-handoff, so no `wave-state.yaml` exists — that is expected; fall back to `/vsdd-factory:next-step`, which routes from STATE.md's EXACT RESUME POINT. Alternatively run `/vsdd-factory:wave-handoff` on wave 89 first to generate the manifest if wave-scoped rehydration is desired.)
+
+**Superseded by:** D-567 pre-STORY-187 spec pass checkpoint (current, see STATE.md). Session resumed from wrap-pause; ran the pre-STORY-187 E-23 spec-drift remediation pass (BC-2.20.014 v1.2, VP-050/055 rescope, E-23 rehash) this burst; next dispatch is the FIX-STORY186-ATBOUND-RELABEL fix PR, then STORY-187 (wave 90).
 
 ---

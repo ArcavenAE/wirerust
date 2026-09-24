@@ -4,7 +4,7 @@ level: ops
 story_id: STORY-184
 title: "S7comm TPKT Core Parser: parse_tpkt_header Pure-Core Free Function + VP-048 Kani Skeleton"
 epic_id: E-23
-version: "1.0"
+version: "1.1"
 status: delivered
 producer: story-writer
 timestamp: 2026-09-06T00:00:00Z
@@ -33,7 +33,7 @@ inputs:
   - .factory/specs/architecture/ARCH-INDEX.md
   - docs/adr/0014-s7comm-iso-on-tcp-stream-dispatch-and-parser-design.md
   - .factory/cycles/feature-s7comm/f1-delta-analysis.md
-input-hash: "cd90b7f"
+input-hash: "a290b6b"
 ---
 
 > **tdd_mode:** `strict` — full TDD Iron Law enforced (`todo!()` bodies + Red Gate density
@@ -211,7 +211,7 @@ ADR-014 Decision 9 scope note: this harness covers `parse_tpkt_header` only.
 | EC-005 | BC-2.20.003 | decoded `length == 0` (all-zero length field, most degenerate case) | `None` |
 | EC-006 | BC-2.20.003 | decoded `length == 6` (one below the RFC 1006 §6 minimum of 7) | `None` |
 | EC-007 | BC-2.20.004 | decoded `length == 7` (exactly the RFC 1006 §6 minimum — the smallest frame with room for a minimal COTP unit) | `Some(TpktHeader{version:3, length:7})` |
-| EC-008 | BC-2.20.004 | decoded `length == 65535` (maximum representable `u16`) | `Some(TpktHeader{version:3, length:65535})` — accepted; stresses the carry-buffer ceiling introduced in STORY-186 |
+| EC-008 | BC-2.20.004 | decoded `length == 65535` (maximum representable `u16` — the TPKT length field's representable ceiling) | `Some(TpktHeader{version:3, length:65535})` — accepted; this ceiling sets the carry-buffer overflow threshold introduced in STORY-186 (`MAX_S7_ISO_ON_TCP_CARRY_BYTES = 65,535`); note that a carry *residual* of the full 65,535 bytes is not itself reachable via `on_data` — the largest reachable residual is 65,534 bytes, one byte short of a complete frame (BC-2.20.013 Reconciliation Note / BC-2.20.014 v1.2 Invariant 1) |
 | EC-009 | BC-2.20.004 | `data[1]` (reserved byte) is non-zero, e.g. `0xFF` | Accepted identically to `data[1] == 0x00` — reserved byte never validated |
 | EC-010 | BC-2.20.004 | `data.len() > length as usize` (a second frame follows immediately) | `parse_tpkt_header` still returns `Some` for the first `length` bytes; frame-walk advance is a STORY-186 concern, not this function's |
 
@@ -288,4 +288,5 @@ once `s7comm.rs` exists to be the sole consumer).
 
 | Version | Date | Author | Change |
 |---------|------|--------|--------|
+| 1.1 | 2026-09-24 | story-writer | STORY-187 spec pass; consistency audit finding #2; BC-2.20.004 v1.1 EC-002 wording model. EC-008's Expected Behavior column conflated the TPKT length field's representable ceiling (65,535 — this BC's own subject matter) with the carry buffer's maximum reachable residual (65,534, a different BC's quantity) by describing the accepted `length == 65535` value as "stresses the carry-buffer ceiling" without distinguishing the two numbers. Reworded, mirroring BC-2.20.004 v1.1 EC-002's correction: `length == 65,535` remains the correct maximum-representable value this BC accepts and the value that sets the carry-buffer overflow threshold (`MAX_S7_ISO_ON_TCP_CARRY_BYTES = 65,535`, BC-2.20.014), but a carry *residual* of the full 65,535 bytes is never reachable via `on_data` — the largest reachable residual is 65,534 bytes, one byte short of a complete frame (BC-2.20.013 Reconciliation Note / BC-2.20.014 v1.2 Invariant 1). Wording only; no change to preconditions, postconditions, invariants, accept/reject behavior, `behavioral_contracts:`, file list, or input-hash. Status remains `delivered`. |
 | 1.0 | 2026-09-06 | story-writer | Initial authorship — TPKT core parser, `parse_tpkt_header`, VP-048 Kani skeleton, AC-184-001..006. |

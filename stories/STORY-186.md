@@ -4,7 +4,7 @@ level: ops
 story_id: STORY-186
 title: "S7comm ISO-on-TCP Carry-Buffer Reassembly, Walk-First Frame Extraction, Resync, and the Frozen SS-20/SS-21 Module Boundary"
 epic_id: E-23
-version: "1.1"
+version: "1.2"
 status: delivered
 producer: story-writer
 timestamp: 2026-09-06T00:00:00Z
@@ -34,7 +34,7 @@ inputs:
   - .factory/specs/architecture/ARCH-INDEX.md
   - docs/adr/0014-s7comm-iso-on-tcp-stream-dispatch-and-parser-design.md
   - .factory/cycles/feature-s7comm/f2-pcap-fixture-sourcing.md
-input-hash: "a99a2d5"
+input-hash: "259af26"
 ---
 
 > **tdd_mode:** `strict` — full TDD Iron Law enforced.
@@ -67,8 +67,8 @@ classification.
 
 | BC ID | Title | Story Role |
 |-------|-------|-----------|
-| BC-2.20.013 | TPKT Frames Spanning TCP Segments Reassembled via Directional Carry Buffers, Walk-First Residual-Bound Semantics | Frame-walk loop, no aggregate pre-check |
-| BC-2.20.014 | Carry Buffer Bounded at MAX_S7_ISO_ON_TCP_CARRY_BYTES=65,535; Overflow Triggers Clear-and-Resync With One T0814 Per Direction | Overflow reaction + dedup |
+| BC-2.20.013 | TPKT Frames Spanning TCP Segment Boundaries Are Reassembled via Directional Carry Buffers Using Walk-First, Residual-Bound Semantics | Frame-walk loop, no aggregate pre-check |
+| BC-2.20.014 | Carry-Overflow Bound (`MAX_S7_ISO_ON_TCP_CARRY_BYTES = 65,535`) and T0814 Guard — Defense-in-Depth, Unreachable by Construction Under Walk-First Design | Overflow reaction + dedup |
 | BC-2.20.015 | Resync Anchor Advances Exactly 1 Byte Per Iteration on a Bad TPKT Version Byte (Never 2) | Resync correctness |
 | BC-2.20.016 | Frozen `iso_on_tcp.rs` Module Boundary — Pure Free Functions Only, No StreamAnalyzer Impl, No Per-Flow State of Its Own | Architectural boundary contract |
 | BC-2.21.003 | `on_flow_close` Removes `S7commFlowState` and Discards All Carry Bytes | Flow lifecycle teardown (packaged here with flow-map creation, not with STORY-187's classification dispatch) |
@@ -110,21 +110,58 @@ classification.
   extracted and `carry[direction]` is empty afterward
 - **Test:** `test_BC_2_20_013_split_frame_across_two_calls`
 
-### AC-186-004: Carry buffer bounded at 65,535 bytes; at-bound residual is legitimate, not overflow (guard's comparison boundary — reachable via real `on_data` traffic)
-(traces to BC-2.20.014 invariant 1) (traces to BC-2.20.014 edge case EC-001)
-- Given a residual of exactly 65,535 bytes from a still-incomplete, conformant
-  `length=65,535` frame — this is the maximum legitimate single-frame residual, and unlike
-  AC-186-005/006 below it IS reachable via the real `on_data` walk-first data path
-  (BC-2.20.014 v1.1 Canonical Test Vectors, "legit: exact ceiling — reachable via real
-  `on_data` traffic")
+### AC-186-004: Carry buffer bounded at 65,535 bytes — (a) SYNTHETIC strict-`>` boundary check at the literal (unrealizable) 65,535 value, and (b) LIVE near-bound check at the actual maximum reachable residual of 65,534 bytes
+(traces to BC-2.20.014 invariant 1) (part (a) traces to BC-2.20.014 edge case EC-006; part (b) traces to BC-2.20.014 edge case EC-001, edge case EC-002)
+
+**CORRECTION (STORY-186 v1.2, consistency audit finding #2, BC-2.20.014 v1.2):** the v1.1
+text of this AC claimed the exactly-65,535-byte at-bound case "IS reachable via the real
+`on_data` walk-first data path." This was incorrect: under the walk-first design, a
+carry residual of exactly 65,535 bytes is UNREALIZABLE via `on_data` — a residual that
+reaches the full 65,535 bytes is itself a complete, dispatchable TPKT frame and would be
+extracted by the walk, not stashed to carry (BC-2.20.014 v1.2 Invariant 1). The actual
+maximum residual reachable via real `on_data` traffic is 65,534 bytes (a declared
+`length=65,535` frame missing exactly its final byte). This AC is therefore split into
+two explicit parts:
+
+**(a) SYNTHETIC strict-`>` boundary check (literal 65,535 value — NOT reachable via
+`on_data`; same synthetic direct-field-injection labeling convention as AC-186-005/006;
+traces to BC-2.20.014 edge case EC-006):**
+- Given a residual of exactly 65,535 bytes, directly seeded onto
+  `S7commFlowState.carry_c2s` via field injection (a complete, conformant max-length TPKT
+  frame constructed by `max_length_frame()` and assigned directly to the carry field,
+  bypassing the `on_data` walk-first path entirely), followed by an `on_data` call with an
+  empty delivery
 - When the residual-bound check runs
-- Then no overflow is triggered (comparison is strict `>`, not `>=`); the residual is
-  retained in carry unchanged. This proves the defense-in-depth guard's comparison
-  boundary (BC-2.20.014 v1.1 Invariant 1) sits exactly at the TPKT `length` field's
-  maximum representable value (`u16::MAX`), not merely "large" — the guard's OVER-bound
-  branch is unreachable-by-construction (AC-186-005/006), but this AT-bound case is live
-  real-traffic behavior, not synthetic
-- **Test:** `test_BC_2_20_014_at_bound_residual_no_overflow`
+- Then no overflow is triggered (comparison is strict `>`, not `>=`) — this proves the
+  defense-in-depth guard's comparison boundary (BC-2.20.014 v1.2 Invariant 1) sits exactly
+  at the TPKT `length` field's maximum representable value (`u16::MAX`), not merely
+  "large." This is a SYNTHETIC guard-boundary check via direct field injection, not a
+  live `on_data`-reachable scenario — the literal value 65,535 can never actually occur as
+  a stashed residual on the real data path
+- **Test:** `test_BC_2_20_014_at_bound_residual_no_overflow` (existing test from STORY-186
+  v1.0/v1.1, relabeled SYNTHETIC by this amendment; no test code change is made by this
+  story-file edit — a follow-up fix PR must update the test's doc comment/labeling to
+  match)
+
+**(b) LIVE near-bound check (the actual maximum reachable residual — real `on_data`
+traffic; NEW, traces to BC-2.20.014 v1.2 Canonical Test Vectors "Near-bound, legitimate"
+row and edge case EC-001; test not yet implemented):**
+- Given a declared `length=65,535` TPKT frame delivered via real `on_data` calls, minus
+  its final byte (65,534 bytes total — the largest residual the walk-first path can ever
+  stash to carry), delivered either in a single call (BC-2.20.014 edge case EC-001) or
+  split across multiple segments/calls as progressive accumulation to the same peak
+  residual (BC-2.20.014 edge case EC-002)
+- When all but the final byte have been delivered
+- Then `carry[direction]` holds exactly 65,534 bytes at every observation point,
+  including intermediate accumulation steps under the multi-call path; no finding is
+  emitted; the carry-overflow dedup flag (`carry_overflow_reported_c2s`/`_s2c`) remains
+  unset
+- When the final byte is then delivered via a subsequent `on_data` call (traces to
+  BC-2.20.014 edge case EC-002's final-byte-completion step)
+- Then the frame is extracted as complete and `carry[direction]` is empty afterward
+- **Test:** `test_BC_2_20_014_live_near_bound_residual_reachable` (NEW — not yet written;
+  this story-file amendment specifies the requirement only. A follow-up fix PR must add
+  this test; src/test/docs changes are not made by this amendment)
 
 ### AC-186-005: [DEFENSE-IN-DEPTH, unreachable via `on_data`] Carry-overflow guard mechanics — clears carry, resyncs, emits exactly one T0814 per direction, IF the guard's precondition is ever reached
 (traces to BC-2.20.014 postcondition 1) (traces to BC-2.20.014 postcondition 3)
@@ -164,8 +201,9 @@ classification.
   `test_BC_2_20_014_repeated_overflow_dedup_same_direction` (both exercise the guard via
   direct flow-state construction, not via `on_data`)
 
-- **NEW positive assertion — on_data-driven unreachability (BC-2.20.014 v1.1 Invariant 1
-  / VP-050 reachability property):** feeding a real garbage flood through `on_data` (e.g.
+- **NEW positive assertion — on_data-driven unreachability (BC-2.20.014 v1.2 Invariant 1
+  / VP-050 clause (c) REACHABLE-BOUND INVARIANT, VP-INDEX.md v2.49):** feeding a real
+  garbage flood through `on_data` (e.g.
   200,000 bytes of non-`0x03`-anchored garbage delivered across one or many calls, with
   no valid TPKT frame ever presented) does **NOT** emit a T0814 for either direction, and
   the directional carry stays bounded `≤ 65,534` bytes at every observation point — the
@@ -302,7 +340,9 @@ proptest! {
         analyzer.on_data(flow_key.clone(), &c2s_data, 0, Direction::ClientToServer);
         analyzer.on_data(flow_key.clone(), &s2c_data, 0, Direction::ServerToClient);
         // carry_c2s must only ever contain bytes routed via C2S; carry_s2c only S2C;
-        // each carry stays <= MAX_S7_ISO_ON_TCP_CARRY_BYTES (65,535).
+        // each carry stays <= 65,534 bytes (BC-2.20.014 v1.2 Invariant 1 -- the maximum
+        // reachable via real `on_data` traffic; the guard constant
+        // MAX_S7_ISO_ON_TCP_CARRY_BYTES = 65,535 is itself unreachable as a residual).
     }
 }
 ```
@@ -348,10 +388,11 @@ the concatenated bytes) is executed in STORY-194.
 |----|-----------|-------------|-------------------|
 | EC-001 | BC-2.20.013 | Single `on_data` call delivers exactly one complete frame, no carry before/after | Frame extracted; carry remains empty |
 | EC-002 | BC-2.20.013 | TCP segment delivers two complete frames back-to-back plus a partial third | Both complete frames extracted in the same call; only the partial third stashed |
-| EC-003 | BC-2.20.014 | `residual.len() == 65,535` exactly (at bound, legitimate) | No overflow; comparison is strict `>`, not `>=` |
-| EC-004 | BC-2.20.014 | `residual.len() == 65,536` (one over bound, adversarial) | Carry cleared; resync; exactly one T0814 |
-| EC-005 | BC-2.20.015 | `0x03` byte exists but starts a frame with an invalid length field (`< 7`, BC-2.20.003) | Resync finds this `0x03`, `parse_tpkt_header` returns `None` again (different reject reason), walk continues advancing 1 byte past it — never stuck retrying the same offset |
-| EC-006 | BC-2.20.016 | A future MMS/ICCP cycle wants to reuse `parse_tpkt_header`/`parse_cotp_header` | Imports them directly; defines its own analogous flow-state fields — zero lines of `iso_on_tcp.rs` change |
+| EC-003 | BC-2.20.014 | `residual.len() == 65,535` exactly — SYNTHETIC direct field injection only (literal boundary value; UNREALIZABLE via real `on_data` traffic, since a residual reaching the full 65,535 bytes would itself be a complete, dispatchable frame and would be extracted rather than stashed — BC-2.20.014 v1.2 Invariant 1; AC-186-004(a)) | No overflow; comparison is strict `>`, not `>=` |
+| EC-004 | BC-2.20.014 | `residual.len() == 65,534` exactly — the actual maximum residual reachable via real `on_data` traffic (a declared `length=65,535` frame missing exactly its final byte; BC-2.20.014 v1.2 Invariant 1 / EC-001; AC-186-004(b)) | No overflow; carry retains all 65,534 bytes; no finding |
+| EC-005 | BC-2.20.014 | `residual.len() == 65,536` (one over bound) — SYNTHETIC direct field injection only, UNREALIZABLE via real `on_data` traffic (same reachability caveat as AC-186-005/006) | Carry cleared; resync; exactly one T0814 |
+| EC-006 | BC-2.20.015 | `0x03` byte exists but starts a frame with an invalid length field (`< 7`, BC-2.20.003) | Resync finds this `0x03`, `parse_tpkt_header` returns `None` again (different reject reason), walk continues advancing 1 byte past it — never stuck retrying the same offset |
+| EC-007 | BC-2.20.016 | A future MMS/ICCP cycle wants to reuse `parse_tpkt_header`/`parse_cotp_header` | Imports them directly; defines its own analogous flow-state fields — zero lines of `iso_on_tcp.rs` change |
 
 ## Token Budget Estimate
 
@@ -431,5 +472,6 @@ No new external crate dependencies.
 
 | Version | Date | Author | Change |
 |---------|------|--------|--------|
+| 1.2 | 2026-09-24 | story-writer | STORY-187 spec pass; consistency audit finding #2; BC-2.20.014 v1.2. AC-186-004 was corrected: it previously claimed the exactly-65,535-byte at-bound residual case was "LIVE, reachable via real `on_data` traffic," but the existing test (`test_BC_2_20_014_at_bound_residual_no_overflow`) actually seeds `S7commFlowState.carry_c2s` directly via `max_length_frame()` injection, then calls `on_data` with an empty delivery — this is SYNTHETIC field injection, not `on_data`-reachable, exactly like AC-186-005/006. Under the walk-first design, a residual of exactly 65,535 bytes is UNREALIZABLE via `on_data`: it would itself be a complete, dispatchable frame and would be extracted, not stashed to carry (BC-2.20.014 v1.2 Invariant 1). AC-186-004 is split into two explicit parts: (a) the existing test, relabeled SYNTHETIC strict-`>` boundary check (same labeling convention as AC-186-005/006) — no test code change; (b) a NEW LIVE near-bound requirement (not yet implemented) asserting that feeding a declared `length=65,535` TPKT frame minus its final byte (65,534 bytes, possibly across multiple segments/calls) via real `on_data` traffic leaves carry holding exactly 65,534 bytes with no finding and an unset overflow dedup flag, and that delivering the final byte then extracts the frame and empties carry. Status remains `delivered`; this is a spec-precision correction only — no behavioral change to shipped code. A follow-up fix PR is required to (i) add the new AC-186-004(b) `test_BC_2_20_014_live_near_bound_residual_reachable` test, and (ii) relabel/re-comment the existing `test_BC_2_20_014_at_bound_residual_no_overflow` test and any demo evidence as SYNTHETIC — those src/test/docs changes are explicitly NOT made by this story-file amendment. **Same-pass follow-up (coordinator-requested scan for residual-65,535-reachable claims):** the Edge Cases table carried the identical defect twice over — EC-003 stated `residual.len() == 65,535` exactly as "at bound, legitimate" with no synthetic label, and EC-004 stated `residual.len() == 65,536` as "one over bound, adversarial" with no synthetic label; both are UNREALIZABLE via real `on_data` traffic for the same reason as AC-186-004(a). EC-003 is now explicitly labeled SYNTHETIC direct field injection; a NEW EC-004 was inserted for the actual `on_data`-reachable maximum (`residual.len() == 65,534` exactly, mirroring AC-186-004(b)); the former EC-004 (65,536 case) is renumbered EC-005 and now explicitly labeled SYNTHETIC; EC-005/EC-006 (0x03-invalid-length, MMS/ICCP reuse) are renumbered EC-006/EC-007 with no content change. The VP-050 proptest skeleton's inline comment (`// each carry stays <= MAX_S7_ISO_ON_TCP_CARRY_BYTES (65,535)`) was also tightened to the precise reachable bound, `<= 65,534` bytes, with the same Invariant-1 citation. No other residual-65,535-reachable claims were found elsewhere in this story (Tasks and Architecture Compliance Rules reference the `65,535` guard constant only as the defense-in-depth bound derivation, not as a reachability claim — left unchanged). **Further same-pass follow-up (BC-summary table H1 refresh):** the Behavioral Contracts table's BC-2.20.014 row still carried its pre-v1.1 H1 ("Carry Buffer Bounded at MAX_S7_ISO_ON_TCP_CARRY_BYTES=65,535; Overflow Triggers Clear-and-Resync With One T0814 Per Direction") instead of the current H1; refreshed verbatim to "Carry-Overflow Bound (`MAX_S7_ISO_ON_TCP_CARRY_BYTES = 65,535`) and T0814 Guard — Defense-in-Depth, Unreachable by Construction Under Walk-First Design". The BC-2.20.013 row was checked against its current H1 and also did not match verbatim ("TPKT Frames Spanning TCP Segments Reassembled via Directional Carry Buffers, Walk-First Residual-Bound Semantics" vs. the source H1's "TPKT Frames Spanning TCP Segment Boundaries Are Reassembled via Directional Carry Buffers Using Walk-First, Residual-Bound Semantics") — corrected verbatim as well. Both refreshed per `bc_h1_is_title_source_of_truth`. **Third same-pass follow-up (product-owner's final BC-2.20.014 v1.2 Edge Cases re-map):** product-owner finalized BC-2.20.014's Edge Cases table as EC-001 = live single-call 65,534 residual, EC-002 = live multi-call progressive accumulation to 65,534 then final-byte completion empties carry, EC-003/004/005 unchanged (counterfactual/synthetic), EC-006 = NEW SYNTHETIC literal-65,535-boundary via direct field injection. AC-186-004's trace line was split accordingly: part (a) (SYNTHETIC literal-65,535 check) now traces to BC-2.20.014 edge case EC-006 (previously cited the now-repurposed EC-001); part (b) (LIVE near-bound check) now traces to edge case EC-001 for the single-call/split-delivery case and edge case EC-002 specifically for the final-byte-completion step, with inline citations added at each corresponding Given/When bullet. AC-186-005's EC-004 citation (second overflow event, same-direction non-re-emission) and AC-186-006's EC-005 citation (independent per-direction dedup) were checked against the new map and require no change — both edge cases are unchanged under the product-owner's re-map. AC-186-005's "NEW positive assertion" paragraph was also updated: its stale "BC-2.20.014 v1.1 Invariant 1 / VP-050 reachability property" citation is now "BC-2.20.014 v1.2 Invariant 1 / VP-050 clause (c) REACHABLE-BOUND INVARIANT, VP-INDEX.md v2.49" to match VP-050's rescoped registered text; all other VP-050 references in this story (the VP-050 Proptest Obligation section header, Library table, File Structure table) were checked and are generic/non-claim-bearing, requiring no change. `behavioral_contracts:`, file list, and input-hash are unchanged. |
 | 1.1 | 2026-09-07 | story-writer | Adversarial-review spec reconciliation (BC-2.20.013/014 v1.1, STORY-186 gate F-02/F-03/F-04, human ruling Option B — Defense-in-Depth): reframed AC-186-004/005/006 — the carry-overflow bound + T0814 emission is now specified as a defense-in-depth guard, unreachable-by-construction via `on_data` under the walk-first (BC-2.20.013) + 1-byte-resync (BC-2.20.015) design given the u16 TPKT length cap (carry provably `≤ 65,534`); AC-186-004 retained as the guard's live-reachable at-bound comparison-boundary case; AC-186-005/006 reframed as SYNTHETIC direct-flow-state-injection guard-mechanics tests (test-fn names unchanged); added new AC-186-005 positive assertion + test `test_BC_2_20_014_overflow_unreachable_via_on_data` asserting a real `on_data` garbage flood emits no T0814 and keeps carry `≤ 65,534`. Fixed F-04 story-text defect: AC-186-007's inline byte example corrected from the invalid `[0x01,0x03,0x00,0x00,0x04]` (length=4, rejected by BC-2.20.003's `length >= 7` floor) to BC-2.20.015's canonical `[0x01,0x03,0x00,0x00,0x07]`; corrected Edge Case EC-005's length floor from `< 4` to `< 7`. No change to `behavioral_contracts:`, file list, or guard IF-reached mechanics (clear-not-truncate, one T0814/direction, per-direction dedup — AC-186-005's call-entry framing stands). |
 | 1.0 | 2026-09-06 | story-writer | Initial authorship — `s7comm.rs` created, carry-buffer reassembly, walk-first frame extraction, resync, frozen SS-20/SS-21 boundary regression guards, VP-050 skeleton, AC-186-001..012. |

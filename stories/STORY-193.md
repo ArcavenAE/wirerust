@@ -33,7 +33,7 @@ inputs:
   - .factory/specs/behavioral-contracts/ss-18/BC-2.18.006.md
   - docs/adr/0014-s7comm-iso-on-tcp-stream-dispatch-and-parser-design.md
   - .factory/cycles/feature-s7comm/f2-port102-model-validation.md
-input-hash: "4a8261b"
+input-hash: "70cac66"
 ---
 
 > **tdd_mode:** `strict` — full TDD Iron Law enforced.

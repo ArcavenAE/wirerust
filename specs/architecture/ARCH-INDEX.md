@@ -1,11 +1,14 @@
 ---
 artifact: architecture-index
 level: L4
-version: "2.24"
+version: "2.25"
 status: verified
 producer: architect
 timestamp: 2026-05-20T00:00:00Z
 modified:
+  - date: 2026-09-24
+    actor: architect
+    reason: "STORY-187 spec pass; consistency audit re-check (E-23, feature-s7comm; verified against develop @294174f5 `src/analyzer/s7comm.rs::on_data`): VP-050/VP-055 rescoped in VP-INDEX.md (v2.48→v2.49) and verification-architecture.md (v2.34→v2.35) — the on_data-driven properties now assert the reachable residual bound (`<= 65,534` bytes, not the literal `65,535` guard-constant boundary) and the absence of any T0814 carry-overflow finding from on_data input; the overflow guard's clear/resync/one-T0814-per-direction reaction mechanics are named as out-of-scope for these properties and covered instead by synthetic direct-field-injection unit tests (STORY-186 AC-186-004(a)/005/006). BC-2.20.014's Verification Properties table row 3 (reachability property, VP allocation deferred to architect) is FOLDED INTO VP-050's rescoped clause — formal counterpart of BC-2.20.014 v1.2 Invariant 1; no new VP allocated (product-owner applies this decision to BC-2.20.014.md directly; not edited by architect). No VP counts, tool assignments, phase assignments, or module assignments changed. Follow-up (same day, coordinator-requested, folded into this entry — no separate version bump): verification-coverage-matrix.md's VP-050/VP-055 rows (~lines 241, 246) carried the identical pre-rescoping defect ('residual bounded at MAX_S7_ISO_ON_TCP_CARRY_BYTES=65,535' / 'carry buffers remain bounded at 65,535 bytes') and have now been rescoped identically for full 3-way POLICY 9 consistency; version bumped 1.49→1.50. Version bump 2.24→2.25."
   - date: 2026-09-06
     actor: spec-steward
     reason: "F2 consistency audit known-open-item closure (ADR-014 row): parenthetical corrected from 'code/BCs pending' to 'code pending' — BC-2.18.005/006 now exist and BC-2.18.003/004 are amended (per BC-INDEX v2.38), so the BCs are no longer pending; only the `src/protocols.rs` implementation and this index's SS-18 row remain unapplied, correctly, since F4 implementation has not started. Governance/prose fix only, no architectural content change. Version bump 2.23→2.24."
