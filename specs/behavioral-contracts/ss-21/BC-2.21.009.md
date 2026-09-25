@@ -1,10 +1,10 @@
 ---
 document_type: behavioral-contract
 level: L3
-version: "1.0"
+version: "1.7"
 status: draft
 producer: product-owner
-timestamp: 2026-09-06T00:00:00Z
+timestamp: 2026-09-24T12:00:00Z
 phase: f2
 origin: greenfield
 extracted_from: null
@@ -13,7 +13,28 @@ subsystem: SS-21
 capability: CAP-21
 lifecycle_status: active
 introduced: feature-s7comm
-modified: []
+modified:
+  - version: "1.7"
+    date: 2026-09-25
+    change: "STORY-187 per-story adversarial pass 13 (P13-F-1): Architecture Anchor test-count re-verification. The Architecture Anchors 'Tests anchor' entry was stale — it cited 7 tests from pass 3 (F-31), before tests added in passes 12-14. Re-grepped `tests/s7comm_analyzer_tests.rs` directly and replaced with the actual current count (12 `test_BC_2_21_009_*` functions) and the full function-name list, verified 2026-09-25 against worktree HEAD 38ff7ee1. Removed the stale 'no drift found (F-31)' claim, which no longer held. No change to Preconditions/Postconditions/Invariants/Edge Cases — Architecture Anchors traceability correction only."
+  - version: "1.6"
+    date: 2026-09-24
+    change: "STORY-187 per-story adversarial pass 8 (N-2): dedup-flag reason-class count correction, sibling to BC-2.21.007's same-burst fix. Postcondition 2 stated the per-direction `malformed_header_reported_c2s`/`_s2c` dedup flag is shared with 'BC-2.21.004/007/008 (all four conditions collectively answer ...)' — undercounted: BC-2.21.008 alone covers two distinct reason classes (truncated Ack, truncated Ack_Data; per its own Postcondition 1), so the flag is actually shared by five reason classes across the four BCs (BC-2.21.004/007/008/009), not four. Corrected to enumerate all five: header too short (BC-2.21.004), unrecognized ROSCTR (BC-2.21.007), truncated Ack and truncated Ack_Data (BC-2.21.008), and this BC's own declared-lengths-exceed-available condition — matching BC-2.21.001's Postcondition 1, which already correctly cites the full four-BC set. No change to Preconditions, Postconditions 1/3, Invariants, Edge Cases, Canonical Test Vectors, or Verification Properties — wording correction confined to Postcondition 2's dedup-sharing count."
+  - version: "1.5"
+    date: 2026-09-24
+    change: "STORY-187 per-story adversarial pass 7 (F-49): VP-051 source-set sibling sweep. Verification Properties table row ('joint with BC-2.21.004, BC-2.21.008') and VP Anchors section ('traces BC-2.21.004, BC-2.21.008, BC-2.21.009') corrected to name all five of VP-051's registered source BCs (BC-2.21.004, BC-2.21.006, BC-2.21.007, BC-2.21.008, BC-2.21.009), reflecting the architect's parallel registration of BC-2.21.006/BC-2.21.007 into VP-051's source_bc under the F-49 ruling."
+  - version: "1.4"
+    date: 2026-09-24
+    change: "STORY-187 per-story adversarial pass 6 (F-45/N-1): VP-051 source-set sibling sweep. F-45 (HIGH, partial-fix sibling miss): this BC's Verification Properties table row and VP Anchors section still said 'joint with BC-2.21.004' / 'traces BC-2.21.004, BC-2.21.009' — a two-BC statement predating pass 5's (F-43) registration of BC-2.21.008 into VP-051's source_bc (now {BC-2.21.004, BC-2.21.008, BC-2.21.009} per VP-INDEX.md). Both corrected to name all three source BCs."
+  - version: "1.3"
+    date: 2026-09-24
+    change: "STORY-187 per-story adversarial pass 4 (F-32/F-33/F-35). F-35: the Verification Properties table row said 'Kani P0 candidate ... VP-NNN allocation deferred', contradicting this BC's own VP Anchors section (already citing the registered VP-051, Kani P0, joint with BC-2.21.004, per VP-INDEX.md v2.48) and BC-2.21.004's own VP table entry (which correctly names VP-051 as registered). Row corrected to cite VP-051 (Kani P0) as registered and VP-055 (cargo-fuzz P1) as complementary, matching the VP Anchors section and BC-2.21.004's sibling entry."
+  - version: "1.2"
+    date: 2026-09-24
+    change: "STORY-187 per-story adversarial pass 3 (F-31), re-anchor sweep. Traceability 'Stories' field corrected from '(TBD — story-writer assigns in F3)' to 'STORY-187 (also a formal-hardening re-verification anchor for STORY-194)', matching the Story Anchor section below. Architecture Module and Architecture Anchors' '(planned)' markers removed — `src/analyzer/s7comm.rs` and the bounds check (implemented as the extracted pure helper `pub fn s7comm_bounds_ok(header: &S7commHeader, data_len: usize) -> bool`, called from `S7commAnalyzer::dispatch_classic_s7comm`) are implemented, not planned. Added a Tests anchor citing `tests/s7comm_analyzer_tests.rs`'s `mod story_187` BC-2.21.009-labeled test functions (7 tests; verified test-name/BC-ID alignment, no drift found)."
+  - version: "1.1"
+    date: 2026-09-24
+    change: "STORY-187 canonical-frame holdout (DF-CANONICAL-FRAME-HOLDOUT-001), human ruling 2026-09-24: Ack and Ack_Data both 12-byte headers. Related BCs wording corrected — the `header_len: 12` bounds-check applicability was stated as 'Ack's `header_len: 12`' only; generalized to 'Ack/Ack_Data's `header_len: 12`', since Ack_Data now also carries `header_len == 12` per BC-2.21.008 v1.2. No change to this BC's own Preconditions/Postconditions/Invariants — the bounds-check obligation was already parametrized over `header.header_len` generically and required no correction."
 deprecated: null
 deprecated_by: null
 replacement: null
@@ -55,9 +76,13 @@ instead of ASDU's implicit body length.
    param_length..]` indexing.
 2. The frame is treated as malformed: `S7commAnalyzer` emits one T0814
    (Anomaly/Possible/Medium) per flow direction, guarded by the same
-   `malformed_header_reported_c2s`/`_s2c` dedup flag as BC-2.21.004/007/008 (all four
-   conditions collectively answer "was this frame's declared structure internally
-   consistent with its actual byte length?").
+   `malformed_header_reported_c2s`/`_s2c` dedup flag as BC-2.21.004/007/008 (five
+   reason classes share this one per-direction flag, not four: header too short
+   (BC-2.21.004), unrecognized ROSCTR (BC-2.21.007), truncated Ack and truncated
+   Ack_Data (BC-2.21.008 — two distinct reason classes sharing one BC file), and this
+   BC's declared-lengths-exceed-available condition — all five collectively answer
+   "was this frame's declared structure internally consistent with its actual byte
+   length?").
 3. No function-code or Userdata classification (BC-2.21.010 onward) is attempted for a
    frame that fails this check — classification always requires a successfully
    bounds-validated parameter block.
@@ -93,7 +118,7 @@ instead of ASDU's implicit body length.
 
 | Property | Proof Method (planned) |
 |----------|-------------------------|
-| No out-of-bounds slice is ever constructed from `header_len`, `param_length`, and `data_length` for any combination of `u16` values and any `data.len()` | Kani P0 candidate (arithmetic/bounds safety over the full `u16 × u16` space is small enough for exhaustive symbolic proof) — VP-NNN allocation deferred |
+| No out-of-bounds slice is ever constructed from `header_len`, `param_length`, and `data_length` for any combination of `u16` values and any `data.len()` | VP-051 (Kani P0) — "S7comm Header Bounds-Before-Slice Safety," joint with BC-2.21.004, BC-2.21.006, BC-2.21.007, BC-2.21.008 (see VP Anchors below); registered F2 INTEGRATE sub-burst per VP-INDEX.md (arithmetic/bounds safety over the full `u16 × u16` space is small enough for exhaustive symbolic proof); cargo-fuzz P1 (VP-055) provides complementary combined-chain no-panic coverage (F-35) |
 
 ## Traceability
 
@@ -102,22 +127,23 @@ instead of ASDU's implicit body length.
 | L2 Capability | CAP-21 ("S7comm Analysis") per domain/capabilities/cap-21-s7comm-analysis.md §CAP-21 |
 | Capability Anchor Justification | CAP-21 ("S7comm Analysis") per domain/capabilities/cap-21-s7comm-analysis.md §CAP-21 — the bounds gate that makes all downstream function-code classification memory-safe |
 | L2 Domain Invariants | None directly (bounds-safety contract) |
-| Architecture Module | SS-21 (`src/analyzer/s7comm.rs`, planned) |
+| Architecture Module | SS-21 (`src/analyzer/s7comm.rs`) |
 | ADR | ADR-014 Decision 9 |
-| Stories | (TBD — story-writer assigns in F3) |
+| Stories | STORY-187 (also a formal-hardening re-verification anchor for STORY-194) |
 | Feature | feature-s7comm |
 | MITRE Techniques | T0814 (Denial of Service) — malformed-header anomaly signal only; emission wiring is a B2 responsibility |
 
 ## Related BCs
 
 - BC-2.21.006 — depends on (`param_length`/`data_length` values this BC validates)
-- BC-2.21.008 — depends on (same validation applies to Ack's `header_len: 12`)
+- BC-2.21.008 — depends on (same validation applies to Ack/Ack_Data's `header_len: 12`)
 - BC-2.21.010 through BC-2.21.023 — depend on (this bounds check is a precondition for every classification BC)
 - BC-2.19.015 — composes with (IEC-104 ASDU minimum-length guard precedent this BC mirrors)
 
 ## Architecture Anchors
 
-- `src/analyzer/s7comm.rs` (planned) — bounds check in `S7commAnalyzer::on_data` (or a helper) immediately after `parse_s7comm_header` returns `Some`, before any parameter/data-block slicing
+- `src/analyzer/s7comm.rs` — `pub fn s7comm_bounds_ok(header: &S7commHeader, data_len: usize) -> bool` pure-core free-function bounds check (implemented, STORY-187), called from the private helper `fn dispatch_classic_s7comm` immediately after `parse_s7comm_header` returns `Some`, before any parameter/data-block slicing — extracted as a standalone `pub fn` (rather than inlined at the call site) so the VP-051 Kani harness can call it directly
+- `tests/s7comm_analyzer_tests.rs` — Tests anchor: 12 `test_BC_2_21_009_*` functions (re-counted by direct grep, verified 2026-09-25 against worktree HEAD 38ff7ee1): `test_BC_2_21_009_dissection_bounded_to_own_tpkt_frame`, `test_BC_2_21_009_bounds_check_before_parameter_data_slice`, `test_BC_2_21_009_bounds_check_dedup_s2c`, `test_BC_2_21_009_s7comm_bounds_ok_helper_matches_bounds_decision`, `test_BC_2_21_009_bounds_check_passes_exact_match`, `test_BC_2_21_009_empty_parameter_and_data_blocks_trivial_pass`, `test_BC_2_21_009_overflow_free_arithmetic_max_values`, `test_BC_2_21_009_ack_header_len_12_bounds_check`, `test_BC_2_21_009_data_length_overrun_on_data_emits_t0814`, `test_BC_2_21_009_s7comm_bounds_ok_data_length_only_overrun`, `test_BC_2_21_009_bounds_failure_evidence_reports_declared_and_available`, `test_BC_2_21_009_bounds_failure_evidence_ack_data_header_len_12`.
 
 ## Story Anchor
 
@@ -126,7 +152,10 @@ STORY-187 (also a formal-hardening re-verification anchor for STORY-194)
 ## VP Anchors
 
 - VP-051 (Kani P0) — S7comm Header Bounds-Before-Slice Safety; registered F2
-  INTEGRATE sub-burst per VP-INDEX.md v2.48; traces BC-2.21.004, BC-2.21.009
+  INTEGRATE sub-burst per VP-INDEX.md; traces BC-2.21.004, BC-2.21.006, BC-2.21.007,
+  BC-2.21.008, BC-2.21.009 (source_bc expanded to this five-BC set under the F-49
+  ruling, STORY-187 per-story adversarial pass 7, 2026-09-24 — previously
+  `{BC-2.21.004, BC-2.21.008, BC-2.21.009}`)
 - VP-055 (cargo-fuzz P1) — S7comm/ISO-on-TCP combined parse-chain no-panic fuzz
   (`fuzz_s7comm_parser`); registered representative-subset source_bc includes this BC
 

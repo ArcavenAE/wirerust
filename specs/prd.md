@@ -1,7 +1,7 @@
 ---
 document_type: prd
 level: L3
-version: "1.62"
+version: "1.63"
 status: draft
 producer: product-owner
 timestamp: 2026-09-06T00:00:00Z
@@ -424,6 +424,32 @@ supplements:
 > default (50/1s) — changed from 20, MEDIUM-confidence, human confirmation at F2 gate. See `.factory/phase-f2-spec-evolution/enip-prd-delta.md`
 > for full delta record. Added SS-17 rows to Section 7 RTM. Total BCs: 304 on disk → 329;
 > active: 304 → 328. BC-INDEX v1.73→v1.74.
+>
+> **Version 1.63 delta (2026-09-24 — STORY-187 canonical-frame holdout finding, human ruling
+> 2026-09-24, DF-CANONICAL-FRAME-HOLDOUT-001):** BC-2.21.008 v1.1→v1.2 corrected: BC-2.21.008
+> previously stated only ROSCTR `0x02` (Ack) requires the 12-byte header (Error Class
+> `data[10]` + Error Code `data[11]`) and that Ack_Data (`0x03`) uses the plain 10-byte common
+> header. Four independent real-world sources — cnblogs "西门子S7通讯协议引用整理"
+> (https://www.cnblogs.com/crcce-dncs/p/10659087.html), Yiqisoft 2023-03-22
+> (https://www.yiqisoft.cn/blogs/IoT-Gateway/363.html), the Inductive Automation KB "Loggers -
+> Device Connections: Siemens", and Kleinmann & Wool 2014 (prose) — each show an Ack_Data Setup
+> Communication response ALSO carrying Error Class/Error Code at bytes 10-11, with the
+> parameter block starting at byte 12. Human ruling: ROSCTR `0x02` (Ack) AND `0x03` (Ack_Data)
+> both require a minimum 12-byte header (`error_class = data[10]`, `error_code = data[11]`,
+> `header_len = 12`); Job (`0x01`) and Userdata (`0x07`) keep the 10-byte header with error
+> fields `None`; an Ack_Data frame with `len ∈ {10, 11}` → `None` (malformed-header T0814).
+> §2.21.B BC index row for BC-2.21.008 synced to the corrected H1: "`parse_s7comm_header` for
+> ROSCTR=Ack (0x02) and Ack_Data (0x03) Requires 12 Bytes (Error Class + Error Code)" (was:
+> "...for ROSCTR=Ack (0x02) Requires 12 Bytes..."). BC-2.21.004, BC-2.21.006, and BC-2.21.009
+> also amended in the same burst for consistency (Description/Postcondition/Related-BCs wording
+> only — see BC-INDEX.md v2.38.5 for the full per-BC delta). No other prd.md narrative text
+> (§2.21.B table rows for BC-2.21.004/006/007/009, the §2.21 "Formal verification" VP-051
+> bullet) referenced the superseded Ack_Data=10-byte assumption — checked, no further changes
+> required. No BC count change (441 on disk; 440 active). No §7 RTM structural change (RTM rows
+> cite BC ID/CAP/module/priority/test-type only, not BC titles). Architect and story-writer
+> propagation obligations are recorded in BC-INDEX.md v2.38.5's FLAGGED note (STORY-187/188
+> Ack_Data=10-byte assumptions; VP-051 harness header-length case-split confirmation) — out of
+> product-owner scope for this delta.
 >
 > **Version 1.62 delta (2026-09-24 — STORY-187 spec pass; consistency audit title-sync):**
 > §2.20.C BC index row for BC-2.20.014 corrected: was still showing the BC's pre-v1.1 title
@@ -2767,7 +2793,7 @@ See `prd-supplements/error-taxonomy.md` for the complete E-xxx-NNN catalog.
 | BC-2.21.005 | `parse_s7comm_header` Defensively Rejects `data[0] != 0x32` | P0 | feature-s7comm |
 | BC-2.21.006 | `parse_s7comm_header` Extracts ROSCTR, PDU Reference, Parameter Length, and Data Length from a Valid 10-byte Common Header (Happy Path) | P0 | feature-s7comm |
 | BC-2.21.007 | `parse_s7comm_header` Returns None for an Unrecognized ROSCTR Byte (Safe-Reject, No Force-Fit) | P0 | feature-s7comm |
-| BC-2.21.008 | `parse_s7comm_header` for ROSCTR=Ack (0x02) Requires 12 Bytes (Error Class + Error Code) | P0 | feature-s7comm |
+| BC-2.21.008 | `parse_s7comm_header` for ROSCTR=Ack (0x02) and Ack_Data (0x03) Requires 12 Bytes (Error Class + Error Code) | P0 | feature-s7comm |
 | BC-2.21.009 | Declared `param_length`/`data_length` Are Bounds-Checked Against Remaining Bytes Before Parameter/Data Block Access (Safe-Reject on Inconsistency) | P0 | feature-s7comm |
 
 #### 2.21.C Job/Ack_Data Function-Code Classification (Group C — SS-21)

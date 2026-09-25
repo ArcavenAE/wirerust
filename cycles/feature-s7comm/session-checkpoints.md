@@ -191,3 +191,18 @@ Prior checkpoints archived to `cycles/feature-iec104/session-checkpoints.md` and
 **Superseded by:** D-568 FIX-STORY186-ATBOUND-RELABEL DELIVERED checkpoint (current, see STATE.md). PR #473 squash-merged to develop as 47951b7a; next dispatch is STORY-187 (wave 90).
 
 ---
+
+## Session Resume Checkpoint (2026-09-24) — D-568 FIX-STORY186-ATBOUND-RELABEL DELIVERED
+
+**D-568 FIX-STORY186-ATBOUND-RELABEL DELIVERED (2026-09-24).** PR #473 squash-merged to `develop` as `47951b7a` (human-executed merge per `PG-MERGE-CLASSIFIER-F4`); `develop` `294174f5`→`47951b7a`; worktree + branch cleaned up. `s7comm.rs` doc comments corrected to ≤65,534 reachable bound; test relabeled SYNTHETIC/EC-006; 2 new LIVE tests added per AC-186-004(b) (`s7comm_analyzer_tests` 18→20); demo evidence relabeled; CHANGELOG entry. pr-reviewer APPROVE in 2 cycles (F3/F5/F6 NITs deferred); CI 13/13 green. `STORY-186` v1.2→v1.3. E-23 rehash 11/11 MATCH (STORY-INDEX v4.30). `FIX-STORY186-ATBOUND-RELABEL` carry-forward RESOLVED. 2 new Drift Items logged (`DRIFT-FLAKY-FINALIZE-SKIPPED-WARNED`, `DRIFT-DEMO-EVIDENCE-PATH-SCRUB-LEGACY`), target maintenance sweep. main=`46ebd6e3` (unchanged), v0.13.3, `stories_delivered`=123 (unchanged). RESUME: `/vsdd-factory:next-step` → STORY-187 (wave 90) — no blockers.**
+
+- **Date + position:** 2026-09-24; F4 IN PROGRESS 3/11 delivered; last delivered STORY-186 (PR #470, develop 294174f5); FIX-STORY186-ATBOUND-RELABEL fix PR DELIVERED (D-568, PR #473, develop 47951b7a); NEXT: STORY-187 (wave 90, S7comm Flow State Completion, Four-Way protocol_id Dispatch Skeleton, and parse_s7comm_header Pure-Core Parser).
+- **Convergence counter:** n/a (D-568 ran a standard 2-cycle pr-review loop on the fix PR, not a per-story adversarial-review loop; STORY-187's per-story adversarial loop not yet dispatched at this checkpoint).
+- **In-flight work:** NONE on develop — no open PRs, no story worktrees.
+- **Pending human decisions / blockers:** none open. `DRIFT-F2-CROSS-BC-CONSISTENCY-CHECK` (OPEN) + `SEC-STORY193-ON-FLOW-CLOSE-EVICTION` + `PG-CANONICAL-HOLDOUT-NOT-AC-ENFORCED-WATCH` + `DRIFT-FLAKY-FINALIZE-SKIPPED-WARNED` (new) + `DRIFT-DEMO-EVIDENCE-PATH-SCRUB-LEGACY` (new) carried forward. `PG-MERGE-CLASSIFIER-F4` means the next story merge (STORY-187) again requires a human-executed `gh pr merge`, not agent-dispatched.
+- **WIP branch list with SHAs:** none.
+- **Resume command:** `/vsdd-factory:next-step` → dispatch `STORY-187` (wave 90).
+
+**Superseded by:** D-569 STORY-187 per-story adversarial CONVERGED checkpoint (current, see STATE.md). 24 passes, closed per human ruling 2026-09-25; code not yet merged; demo recording in progress; next: PR lifecycle → human merge.
+
+---

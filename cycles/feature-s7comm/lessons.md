@@ -1,10 +1,10 @@
 ---
 document_type: lessons-learned
 level: ops
-version: "1.2"
+version: "1.3"
 status: in-progress
 producer: state-manager
-timestamp: 2026-09-24T19:45:32Z
+timestamp: 2026-09-25T00:00:00Z
 cycle: "feature-s7comm"
 inputs: [STATE.md]
 input-hash: "[live-state]"
@@ -177,6 +177,67 @@ _(none recorded this cycle)_
     pass (F3) or maintenance sweep (F5/F6) rather than a second fix-PR cycle.
     _Discovered: FIX-STORY186-ATBOUND-RELABEL PR #473 review cycle 1, 2026-09-24._
 
+11. **[process-gap] (a) Sibling-sweep misses across passes** — BC anchor test counts were not
+    re-swept across sibling BCs after remediation test additions, recurring 3 times within
+    STORY-187's 24-pass per-story adversarial loop: **F-31**, **F-33**, **P13-F-1**. Each
+    occurrence is the same shape — a test-count anchor in one BC/sibling artifact goes stale
+    when a remediation burst adds tests to a related BC without sweeping the anchor counts of
+    its siblings. Disposition: **deferred** — tracked against a new drift item
+    `DRIFT-P187-SIBLING-TESTCOUNT-SWEEP` (`cycles/feature-s7comm/drift-items-and-carry-
+    forwards.md`) rather than `DRIFT-F2-CROSS-BC-CONSISTENCY-CHECK`, since the recurrence
+    pattern here (anchor counts specifically, within-pass rather than cross-artifact) is a
+    narrower, more mechanically-checkable class than that drift item's general cross-BC
+    state-model contradiction scope. Per DF-VALIDATION-001, any GitHub issue filed from this
+    finding requires research-agent validation first.
+    _Discovered: STORY-187 per-story adversarial passes 13/31/33-equivalent, 2026-09-24/25._
+
+12. **[process-gap] (b) AC notes not verified against test bodies** — acceptance-criterion
+    notes claiming specific test assertions were present were written without re-reading the
+    actual test bodies to confirm the claim, surfacing 3 times in STORY-187's convergence loop:
+    **P16-F-1**, **P19-F-2**, **P20-F-1**. Disposition: **deferred** — tracked against a new
+    drift item `DRIFT-P187-AC-NOTE-TEST-VERIFICATION`
+    (`cycles/feature-s7comm/drift-items-and-carry-forwards.md`); candidate fix is an AC-note
+    authoring checklist step requiring the author to re-read the cited test body before writing
+    an assertion claim. Per DF-VALIDATION-001, any GitHub issue filed from this finding
+    requires research-agent validation first.
+    _Discovered: STORY-187 per-story adversarial passes 16/19/20, 2026-09-24/25._
+
+13. **[process-gap] (c) Canonical-frame holdout surfaced a real BC error — policy validated.**
+    The canonical-frame holdout (`DF-CANONICAL-FRAME-HOLDOUT-001`) caught a genuine
+    specification error during STORY-187's convergence: the Ack/Ack_Data header-length
+    question (resolved by the human ruling that both are 12-byte headers, see convergence-
+    report.md) was surfaced by the holdout test disagreeing with the then-current spec text,
+    not by a reviewer's manual reading. This is a positive result validating the holdout
+    policy's value (see lesson 2/`PG-CANONICAL-HOLDOUT-NOT-AC-ENFORCED`'s enforcement-gap
+    concern from earlier stories) — no follow-up action needed beyond noting the validation;
+    not a process gap in the usual sense, recorded in this numbered sequence per the
+    orchestrator's grouping.
+    _Discovered: STORY-187 per-story adversarial convergence (Ack/Ack_Data ruling), 2026-09-24/25._
+
+14. **[process-gap] (d) 24-pass convergence driven by wording-only findings on a large diff.**
+    STORY-187's per-story adversarial loop took 24 passes to converge — the highest of any F4
+    story so far (STORY-184: 10, STORY-185: 5, STORY-186: 5) — largely because each
+    fresh-context reviewer surfaced new doc-wording issues on a ~5k-line diff rather than new
+    substantive defects (see the closing trio P22 LOW/NIT-wording, P23 one LOW test-adequacy
+    fixed + NITs, P24 NITPICK_ONLY). Candidate dispositions: a wording-only severity floor
+    (wording-only findings do not reset the clean-pass streak), or a dedicated convergence rule
+    for doc-only drift. **Human ruling (2026-09-25)** closed this story's loop pragmatically
+    (accept-with-residuals after the P23 fix batch) without resolving the general process
+    question. Disposition: **deferred** — tracked against a new drift item
+    `DRIFT-P187-WORDING-CONVERGENCE-VELOCITY`
+    (`cycles/feature-s7comm/drift-items-and-carry-forwards.md`); target a future
+    BC-5.39.001 convergence-protocol improvement.
+    _Discovered: STORY-187 per-story adversarial convergence, closing trio P22/P23/P24,
+    2026-09-25._
+
+15. **[accepted-residual] STORY-187 non-blocking residuals carried from the convergence loop**
+    — **P15-F-1**, **P17-F-2** (accepted, non-blocking); **P20-F-2**/**P20-F-3** (partially
+    addressed, residual scope carried forward); **P21-F-1** (accepted, non-blocking); the P22
+    and P24 wording-only NITs (accepted, non-blocking, see lesson 14 above for the pattern).
+    None block correctness or the human-ruled convergence closure. Full pass-level context:
+    `cycles/feature-s7comm/STORY-187/convergence-report.md`.
+    _Discovered: STORY-187 per-story adversarial convergence, 2026-09-24/25._
+
 ## Infrastructure-Level
 
 1. **[infra] Nested-subagent messaging deadlock** — pr-manager (dispatched as a subagent for
@@ -214,6 +275,15 @@ _(none recorded this cycle)_
    standalone defect this cycle.
    _Discovered: FIX-STORY186-ATBOUND-RELABEL demo-evidence re-render, 2026-09-24._
 
+5. **[process-gap] (e) Nested demo-recorder/VHS stall recurrence** — the demo-recorder
+   dispatch stall pattern from infra item 4 (stream-watchdog timeout, no partial output on
+   disk) recurred during STORY-187's demo recording (in progress as of this checkpoint burst).
+   Mitigation already identified in item 4 (prebuild step + bounded render timeouts) was
+   applied and the recurrence was successfully mitigated. Harness/runtime dispatch-timeout
+   issue, not a factory logic defect; no further factory-side action needed — recorded here to
+   confirm the item-4 mitigation generalizes across stories.
+   _Discovered: STORY-187 demo-recorder dispatch, 2026-09-24/25._
+
 ## Policy Candidates
 
 | Lesson | Proposed Policy | Scope | Status |
@@ -223,3 +293,6 @@ _(none recorded this cycle)_
 | 4 | Root-cause or document the Claude Code permission classifier's intermittent blocking of agent-dispatched `gh pr merge` on F4 story PRs (PG-MERGE-CLASSIFIER-F4) | Merge-authorization tooling | deferred — human workaround in place for rest of F4 (STORY-186 merge again human-executed) |
 | 8 | Add an F2/F3 cross-BC consistency checkpoint that diffs paired/coupled BCs within a subsystem for state-model contradictions (not just per-BC self-consistency) — motivated by the BC-2.20.013-vs-2.20.014 contradiction escaping to STORY-186 per-story review | F2 spec-evolution / F3 story-decomposition gate discipline | proposed — see DRIFT-F2-CROSS-BC-CONSISTENCY-CHECK; recurred D-567 one hop downstream (VP/arch/PRD), see lesson 9 |
 | 9 | Extend the same F2/F3 consistency checkpoint (lesson 8's proposed policy) to sweep VP-INDEX/verification-architecture/verification-coverage-matrix/PRD whenever a BC's VP allocation or scope changes, not just sibling BCs — motivated by the D-567 finding that the D-565 BC-2.20.013/014 reconciliation itself did not propagate to those four artifacts | F2 spec-evolution gate discipline | deferred (D-567) — tracked against DRIFT-F2-CROSS-BC-CONSISTENCY-CHECK (same root cause, no new drift item); target feature-s7comm cycle close |
+| 11 | Add a mechanical sibling-BC test-count-anchor re-sweep step to remediation bursts (narrower than lesson 8/9's general cross-BC checkpoint) — motivated by the F-31/F-33/P13-F-1 recurrence in STORY-187's convergence loop | Remediation-burst discipline / story-writer-test-writer checklist | proposed — see DRIFT-P187-SIBLING-TESTCOUNT-SWEEP |
+| 12 | Require AC-note authors to re-read the cited test body before writing an assertion claim (an authoring checklist step) — motivated by the P16-F-1/P19-F-2/P20-F-1 recurrence in STORY-187's convergence loop | Story-writer / AC-note authoring discipline | proposed — see DRIFT-P187-AC-NOTE-TEST-VERIFICATION |
+| 14 | Introduce a wording-only severity floor (or a dedicated convergence rule for doc-only drift) so that wording-only findings do not reset the per-story adversarial clean-pass streak — motivated by STORY-187 needing 24 passes to converge, largely on doc-wording findings on a ~5k-line diff | BC-5.39.001 convergence-protocol discipline | proposed — see DRIFT-P187-WORDING-CONVERGENCE-VELOCITY; human ruling (2026-09-25) closed STORY-187 pragmatically without resolving the general question |

@@ -1,7 +1,7 @@
 ---
 document_type: behavioral-contract
 level: L3
-version: "1.0"
+version: "1.4"
 status: draft
 producer: product-owner
 timestamp: 2026-09-06T00:00:00Z
@@ -13,7 +13,19 @@ subsystem: SS-21
 capability: CAP-21
 lifecycle_status: active
 introduced: feature-s7comm
-modified: []
+modified:
+  - version: "1.4"
+    date: 2026-09-25
+    change: "STORY-187 per-story adversarial pass 13 (P13-F-1): Architecture Anchor test-count re-verification. Re-grepped `tests/s7comm_analyzer_tests.rs` directly and confirmed the count (2 `test_BC_2_21_005_*` functions) is unchanged since pass 3 (F-31); listed both function names explicitly and removed the stale 'no drift found (F-31)' phrasing in favor of an explicit re-verification timestamp, verified 2026-09-25 against worktree HEAD 38ff7ee1. No change to Preconditions/Postconditions/Invariants/Edge Cases — Architecture Anchors traceability correction only."
+  - version: "1.3"
+    date: 2026-09-24
+    change: "STORY-187 per-story adversarial pass 7 (F-49): VP-051 source-set sibling sweep. VP Anchors section's 'not in VP-051's registered source_bc {BC-2.21.004, BC-2.21.008, BC-2.21.009}' corrected to '{BC-2.21.004, BC-2.21.006, BC-2.21.007, BC-2.21.008, BC-2.21.009}', matching the architect's parallel registration of BC-2.21.006/BC-2.21.007 into VP-051's source_bc under the F-49 ruling — this BC remains outside VP-051's source_bc (no dedicated VP anchor); only the cited set was stale."
+  - version: "1.2"
+    date: 2026-09-24
+    change: "STORY-187 per-story adversarial pass 6 (F-45/N-1): VP-051 source-set sibling sweep. VP Anchors section's 'not in VP-051's registered source_bc {BC-2.21.004, BC-2.21.009}' corrected to '{BC-2.21.004, BC-2.21.008, BC-2.21.009}', matching VP-INDEX.md's current registration (pass 5, F-43) — this BC remains outside VP-051's source_bc (no dedicated VP anchor); only the cited set was stale."
+  - version: "1.1"
+    date: 2026-09-24
+    change: "STORY-187 per-story adversarial pass 3 (F-31), re-anchor sweep. Traceability 'Stories' field corrected from '(TBD — story-writer assigns in F3)' to 'STORY-187'. Architecture Module and Architecture Anchors' '(planned)' markers removed — `src/analyzer/s7comm.rs` and `pub fn parse_s7comm_header`'s defensive `if data[0] != 0x32 { return None; }` guard are implemented, not planned. Added a Tests anchor citing `tests/s7comm_analyzer_tests.rs`'s `mod story_187` BC-2.21.005-labeled test functions (2 tests; verified test-name/BC-ID alignment, no drift found)."
 deprecated: null
 deprecated_by: null
 replacement: null
@@ -89,9 +101,9 @@ hygiene contract, not a wire-format edge case.
 | L2 Capability | CAP-21 ("S7comm Analysis") per domain/capabilities/cap-21-s7comm-analysis.md §CAP-21 |
 | Capability Anchor Justification | CAP-21 ("S7comm Analysis") per domain/capabilities/cap-21-s7comm-analysis.md §CAP-21 — defensive guard on the classic S7comm dissection entry function |
 | L2 Domain Invariants | None directly |
-| Architecture Module | SS-21 (`src/analyzer/s7comm.rs`, planned) |
+| Architecture Module | SS-21 (`src/analyzer/s7comm.rs`) |
 | ADR | ADR-014 Decision 9 |
-| Stories | (TBD — story-writer assigns in F3) |
+| Stories | STORY-187 |
 | Feature | feature-s7comm |
 | MITRE Techniques | (none) |
 
@@ -102,7 +114,8 @@ hygiene contract, not a wire-format edge case.
 
 ## Architecture Anchors
 
-- `src/analyzer/s7comm.rs` (planned) — `fn parse_s7comm_header`, defensive `data[0] == 0x32` guard
+- `src/analyzer/s7comm.rs` — `pub fn parse_s7comm_header`, defensive `if data[0] != 0x32 { return None; }` guard (implemented, STORY-187)
+- `tests/s7comm_analyzer_tests.rs` — Tests anchor: 2 `test_BC_2_21_005_*` functions (re-counted by direct grep, verified 2026-09-25 against worktree HEAD 38ff7ee1): `test_BC_2_21_005_defensive_reject_wrong_protocol_id_byte`, `test_BC_2_21_005_defensive_reject_zero_byte`.
 
 ## Story Anchor
 
@@ -110,10 +123,10 @@ STORY-187
 
 ## VP Anchors
 
-(None dedicated — not in VP-051's registered source_bc {BC-2.21.004, BC-2.21.009}.
-No-panic behavior on this defensive-reject path is expected to be exercised
-generically by VP-055's combined fuzz harness, but no individual VP-NNN forward-anchor
-is registered for this specific BC in VP-INDEX.md v2.48.)
+(None dedicated — not in VP-051's registered source_bc {BC-2.21.004, BC-2.21.006,
+BC-2.21.007, BC-2.21.008, BC-2.21.009}. No-panic behavior on this defensive-reject path
+is expected to be exercised generically by VP-055's combined fuzz harness, but no
+individual VP-NNN forward-anchor is registered for this specific BC in VP-INDEX.md.)
 
 ## Purity Classification
 

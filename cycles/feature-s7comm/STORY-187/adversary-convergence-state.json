@@ -1,0 +1,63 @@
+{
+  "document_type": "adversary-convergence-state",
+  "story": "STORY-187",
+  "cycle": "feature-s7comm",
+  "criterion": "BC-5.39.001",
+  "passes_total": 24,
+  "passes_clean": [10, 11, 15, 17, 18, 21, 24],
+  "closing_trio": ["P22", "P23", "P24"],
+  "last_classification": "NITPICK_ONLY",
+  "verdict": "CONVERGED",
+  "closure_authority": "HUMAN RULING 2026-09-25 (accept convergence with residuals after one final fix batch)",
+  "human_rulings": [
+    {"id": "F-01", "summary": "opposite-direction CR/CC session"},
+    {"id": "F-02", "summary": "None DT never classifies"},
+    {"id": "F-12", "summary": "classic dissection gated on sticky Classic"},
+    {"id": "F-13", "summary": "Ack error logging deferred to STORY-188"},
+    {"id": "F-14", "summary": "VP-051 Kani P0"},
+    {"id": "ACK-ACKDATA-12BYTE", "summary": "Ack AND Ack_Data both 12-byte headers (canonical-frame holdout)"},
+    {"id": "F-40", "summary": "ADR-014 Decision 4 note: public wire-capture bytes permitted as test vectors only; provenance for Ack 0x02 via permitted design references (icsnpp-s7comm, python-snap7; libs7comm consistent)"},
+    {"id": "CONVERGENCE-CLOSURE", "summary": "convergence closure accepted with residuals after final fix batch"}
+  ],
+  "deferred_findings": [
+    {"id": "P15-F-1", "status": "accepted-residual", "note": "non-blocking"},
+    {"id": "P17-F-2", "status": "accepted-residual", "note": "non-blocking"},
+    {"id": "P20-F-2", "status": "partially-addressed", "note": "residual scope carried forward"},
+    {"id": "P20-F-3", "status": "partially-addressed", "note": "residual scope carried forward"},
+    {"id": "P21-F-1", "status": "accepted-residual", "note": "non-blocking"},
+    {"id": "P23-LOW", "status": "fixed", "note": "fixed post-convergence with mutation proof (cargo-mutants evidence-arithmetic survivors killed by 6705ed8b)"}
+  ],
+  "mutation_testing": {
+    "tool": "cargo-mutants",
+    "version": "27.1.0",
+    "mode": "serial",
+    "scope": "STORY-187 s7comm.rs diff",
+    "total_mutants": 43,
+    "killed_viable_nonequivalent": 40,
+    "late_survivors_killed_by": "6705ed8b",
+    "equivalent": 1,
+    "equivalent_note": "empty Some(0x72) placeholder arm, deferred to STORY-190 (becomes killable once that arm is implemented)",
+    "unviable": 2
+  },
+  "formal_verification": {
+    "vp": "VP-051",
+    "tool": "Kani",
+    "result": "VERIFICATION SUCCESSFUL",
+    "counterexamples": "0/264",
+    "covers": "6/6",
+    "execution": "local"
+  },
+  "test_suite": {
+    "s7comm_analyzer_tests": "83/83",
+    "full_suite": "2803 passed / 0 failed"
+  },
+  "merge_status": "NOT_YET_MERGED",
+  "branch": "feature/STORY-187-s7comm-header-dispatch",
+  "worktree": ".worktrees/STORY-187",
+  "head": "a44e8277",
+  "base": "develop 47951b7a",
+  "commits_over_base": 52,
+  "timestamp": "2026-09-25T00:00:00Z",
+  "producer": "state-manager",
+  "note": "This machine-readable artifact is a supplement to convergence-report.md, which is the primary narrative record (per the STORY-186 precedent, feature-s7comm F4 stories do not otherwise maintain this file)."
+}
