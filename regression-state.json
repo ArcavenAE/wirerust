@@ -1,1 +1,1 @@
-{"status":"pass","timestamp":"2026-09-25T14:23:23Z","command":"cargo test --test s7comm_analyzer_tests story_187:: 2>&1 | tail -5\necho \"---full suite---\"\ncargo test --test s7comm_analyzer_tests 2>&1 | tail -5"}
+{"status":"pass","timestamp":"2026-09-25T14:45:11Z","command":"cargo test --all-targets 2>&1 | grep 'test result' | awk '{p+=$4; f+=$6} END {print \"passed=\"p, \"failed=\"f, \"binaries=\"NR}'"}

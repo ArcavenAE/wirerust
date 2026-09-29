@@ -34,7 +34,7 @@ inputs:
   - .factory/specs/architecture/ARCH-INDEX.md
   - docs/adr/0014-s7comm-iso-on-tcp-stream-dispatch-and-parser-design.md
   - .factory/cycles/feature-s7comm/f2-pcap-fixture-sourcing.md
-input-hash: "6ce0b51"
+input-hash: "5b7944c"
 ---
 
 > **tdd_mode:** `strict` — full TDD Iron Law enforced.
