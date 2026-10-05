@@ -1,7 +1,7 @@
 ---
 document_type: behavioral-contract
 level: L3
-version: "1.0"
+version: "1.1"
 status: draft
 producer: product-owner
 timestamp: 2026-09-06T00:00:00Z
@@ -13,7 +13,10 @@ subsystem: SS-21
 capability: CAP-21
 lifecycle_status: active
 introduced: feature-s7comm
-modified: []
+modified:
+  - version: "1.1"
+    date: 2026-10-04
+    change: "STORY-188 per-story adversarial pass 1 remediation (F-07): replaced every (planned) Architecture marker and the TBD Stories placeholder with concrete anchors verified against worktree HEAD f33b4337 and Stories: STORY-188; added verifying-test list. No behavioral change."
 deprecated: null
 deprecated_by: null
 replacement: null
@@ -103,9 +106,9 @@ covered by the shared match anchored to BC-2.21.017.)
 | L2 Capability | CAP-21 ("S7comm Analysis") per domain/capabilities/cap-21-s7comm-analysis.md §CAP-21 |
 | Capability Anchor Justification | CAP-21 ("S7comm Analysis") per domain/capabilities/cap-21-s7comm-analysis.md §CAP-21 — the per-frame classification surface B2's T0843/T0889 complete-sequence detection is built on |
 | L2 Domain Invariants | None directly |
-| Architecture Module | SS-21 (`src/analyzer/s7comm.rs`, planned) |
+| Architecture Module | SS-21 (`src/analyzer/s7comm.rs`: `S7ClassicFunction` :339, `classify_job_ack_function` :385) |
 | ADR | ADR-014 Decision 5 (T0843/T0889 detection pattern references this three-FC sequence) |
-| Stories | (TBD — story-writer assigns in F3) |
+| Stories | STORY-188 |
 | Feature | feature-s7comm |
 | MITRE Techniques | T0843 (Program Download), T0889 (Modify Program) — **named per ADR-014 Decision 5 as the sequence this classification feeds; sequence correlation and emission are authored in part B2, not this BC** |
 
@@ -116,7 +119,8 @@ covered by the shared match anchored to BC-2.21.017.)
 
 ## Architecture Anchors
 
-- `src/analyzer/s7comm.rs` (planned) — `S7ClassicFunction::{RequestDownload, DownloadBlock, DownloadEnded}` match arms
+- `src/analyzer/s7comm.rs:385` — `0x1A`/`0x1B`/`0x1C` arms of `classify_job_ack_function` (`src/analyzer/s7comm.rs:385`, `pub fn classify_job_ack_function(data, header_len, param_length) -> S7ClassicFunction`) mapping to `S7ClassicFunction::{RequestDownload, DownloadBlock, DownloadEnded}` (:339)
+- `tests/s7comm_analyzer_tests.rs` `mod story_188` — verifying tests: `test_BC_2_21_013_download_triad_classified_independently`, `story_188::vp054::proptest_vp054_download_upload_structural_disjointness` (VP-054)
 - `.factory/research/s7comm-mitre-ics-tagging.md` §Per-technique validation table — T0843/T0889 detection-pattern source
 
 ## Story Anchor

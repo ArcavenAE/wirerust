@@ -1,7 +1,7 @@
 ---
 document_type: behavioral-contract
 level: L3
-version: "1.0"
+version: "1.1"
 status: draft
 producer: product-owner
 timestamp: 2026-09-06T00:00:00Z
@@ -13,7 +13,10 @@ subsystem: SS-21
 capability: CAP-21
 lifecycle_status: active
 introduced: feature-s7comm
-modified: []
+modified:
+  - version: "1.1"
+    date: 2026-10-04
+    change: "STORY-188 per-story adversarial pass 1 remediation (F-07): replaced every (planned) Architecture marker and the TBD Stories placeholder with concrete anchors verified against worktree HEAD f33b4337 and Stories: STORY-188; added verifying-test list. No behavioral change."
 deprecated: null
 deprecated_by: null
 replacement: null
@@ -97,8 +100,8 @@ distinct condition from "FC byte present but unrecognized."
 
 ## Verification Properties
 
-| Property | Proof Method (planned) |
-|----------|-------------------------|
+| Property | Proof Method |
+|----------|--------------|
 | The full Job/Ack_Data FC classification match (BC-2.21.010 through this BC) is total and non-overlapping over all 256 `u8` values plus the `param_length == 0` case | proptest P1 (mirrors VP-046's `classify_frame_format` totality treatment) — VP-NNN allocation deferred to the F2 INTEGRATE sub-burst |
 
 ## Traceability
@@ -108,9 +111,9 @@ distinct condition from "FC byte present but unrecognized."
 | L2 Capability | CAP-21 ("S7comm Analysis") per domain/capabilities/cap-21-s7comm-analysis.md §CAP-21 |
 | Capability Anchor Justification | CAP-21 ("S7comm Analysis") per domain/capabilities/cap-21-s7comm-analysis.md §CAP-21 — the totality guarantee that makes the whole `S7ClassicFunction` classification surface exhaustively safe for B2 to consume |
 | L2 Domain Invariants | None directly |
-| Architecture Module | SS-21 (`src/analyzer/s7comm.rs`, planned) |
+| Architecture Module | SS-21 (`src/analyzer/s7comm.rs`: `S7ClassicFunction` :339, `classify_job_ack_function` :385 (`Unrecognized`/`NoParameterBlock` arms)) |
 | ADR | ADR-014 Decision 2 (no-force-fit philosophy, applied here at the FC layer) |
-| Stories | (TBD — story-writer assigns in F3) |
+| Stories | STORY-188 |
 | Feature | feature-s7comm |
 | MITRE Techniques | (none — this is a negative-classification/totality contract, not a positive emission surface) |
 
@@ -121,7 +124,8 @@ distinct condition from "FC byte present but unrecognized."
 
 ## Architecture Anchors
 
-- `src/analyzer/s7comm.rs` (planned) — `S7ClassicFunction::{Unrecognized(u8), NoParameterBlock}` terminal match arms
+- `src/analyzer/s7comm.rs:385` — `other => S7ClassicFunction::Unrecognized(other)` terminal arm and the `param_length == 0` / unsliceable-block `NoParameterBlock` early returns of `classify_job_ack_function` (`src/analyzer/s7comm.rs:385`, `pub fn classify_job_ack_function(data, header_len, param_length) -> S7ClassicFunction`); variants at :339
+- `tests/s7comm_analyzer_tests.rs` `mod story_188` — verifying tests: `test_BC_2_21_017_unrecognized_fc_and_empty_parameter_block`, `test_BC_2_21_017_fc_classification_total_over_all_256_values`, `story_188::vp052::proptest_vp052_fc_classification_totality` (VP-052)
 
 ## Story Anchor
 

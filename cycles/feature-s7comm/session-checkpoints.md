@@ -238,3 +238,24 @@ Prior checkpoints archived to `cycles/feature-iec104/session-checkpoints.md` and
 **Superseded by:** SESSION-WRAP-PAUSE-2026-09-29 (D-571) checkpoint (current, see STATE.md). Factory paused after STORY-187 delivered (4/11 F4); no work in-flight; next dispatch is STORY-188 (wave 91).
 
 ---
+
+
+## SESSION-WRAP-PAUSE-2026-09-29 (D-571) checkpoint — archived verbatim 2026-10-04 (D-572)
+
+
+**SESSION-WRAP-PAUSE-2026-09-29 (D-571).** Factory paused per human wrap request. `pipeline` IN-PROGRESS→PAUSED; `phase` prefixed `PAUSED 2026-09-29.`; STATE.md `version` 3.8→3.9. Position: Feature Mode `feature-s7comm`, F4 delta-implementation, 4/11 delivered (STORY-184 PR #466, STORY-185 PR #467, STORY-186 PR #470 + fix PR #473, STORY-187 PR #475 `17b00031`); `develop` `17b00031`; `main` `46ebd6e3` (v0.13.3). NEXT: `STORY-188` (wave 91, 8 pts, Job/Ack_Data function-code classification incl. AC-188-010 Ack/Ack_Data error class/code logging per human ruling F-13). Convergence: no loop active; STORY-187 per-story adversarial CONVERGED (24 passes, human-ruled closure 2026-09-25). In-flight: none; no worktrees; no open story PRs; stale stash entry `4eeba789` ("STORY187-P12-WIP-check-baseline", verified duplicate of committed work — human may `git stash drop` it; guard blocks agents). Pending human decisions/advisories: `PG-MERGE-CLASSIFIER-F4` — agent `gh pr merge` blocked ("Merge Without Review"), human merges F4 PRs unless a Bash permission rule for `gh pr merge` is added; STATE.md over soft budget — `/compact-state` advisable; `CLAUDE_AUTOCOMPACT_PCT_OVERRIDE` missing from `.claude/settings.json` (recommend "70"); open Dependabot PRs #468/#469/#471/#472 unreviewed; open drift items per `cycles/feature-s7comm/drift-items-and-carry-forwards.md` (D-01 COTP segmentation, D-P12-1 LI=0 sticky-Unclassified, D-P21-1 carry re-copy CPU, flaky FINALIZE_SKIPPED_WARNED pair, demo-evidence path-scrub legacy, BC-2.21.027/018 VP rows, python-snap7 clean-room); PRs #451/#407 awaiting contributors. WIP branches: none. RESUME: open a new session in `/Users/zious/Documents/GITHUB/wirerust`, run `/vsdd-factory:rehydrate-wave` then `/vsdd-factory:next-step`.**
+
+Prior checkpoints archived to `cycles/feature-iec104/session-checkpoints.md` and `cycles/wave-084/session-checkpoints.md` and `cycles/wave-085/session-checkpoints.md` and `cycles/wave-086/session-checkpoints.md` (D-554) and `cycles/maint-2026-09-05/session-checkpoints.md` (D-553, D-555, D-556) and `cycles/feature-s7comm/session-checkpoints.md` (D-558, D-559, D-560, D-561, D-562, D-563, D-564, D-565, D-566, D-567, D-568, D-569, D-570).
+
+- **Date + position:** 2026-09-29; Feature Mode feature-s7comm, F4 delta-implementation, 4/11 delivered (STORY-184 PR #466, STORY-185 PR #467, STORY-186 PR #470 + fix PR #473, STORY-187 PR #475 `17b00031`); `develop` `17b00031`; `main` `46ebd6e3` (v0.13.3). NEXT: STORY-188 (wave 91, 8 pts, Job/Ack_Data function-code classification incl. AC-188-010 Ack/Ack_Data error class/code logging per human ruling F-13).
+- **Convergence counter:** no loop active; STORY-187 per-story adversarial CONVERGED (24 passes, human-ruled closure 2026-09-25).
+- **In-flight work:** none; no worktrees; no open story PRs; stale stash entry `4eeba789` ("STORY187-P12-WIP-check-baseline", verified duplicate of committed work — human may `git stash drop` it; guard blocks agents).
+- **Pending human decisions / blockers:** `PG-MERGE-CLASSIFIER-F4` — agent `gh pr merge` blocked ("Merge Without Review"), human merges F4 PRs unless a Bash permission rule for `gh pr merge` is added; STATE.md over soft budget — `/compact-state` advisable; `CLAUDE_AUTOCOMPACT_PCT_OVERRIDE` missing from `.claude/settings.json` (recommend "70"); open Dependabot PRs #468/#469/#471/#472 unreviewed; open drift items per `cycles/feature-s7comm/drift-items-and-carry-forwards.md` (D-01 COTP segmentation, D-P12-1 LI=0 sticky-Unclassified, D-P21-1 carry re-copy CPU, flaky FINALIZE_SKIPPED_WARNED pair, demo-evidence path-scrub legacy, BC-2.21.027/018 VP rows, python-snap7 clean-room); PRs #451/#407 awaiting contributors.
+- **WIP branch list with SHAs:** none.
+- **Resume command:** open a new session in `/Users/zious/Documents/GITHUB/wirerust`, run `/vsdd-factory:rehydrate-wave` then `/vsdd-factory:next-step`.
+
+---
+
+**Superseded by:** STORY-188 F4 WIP CHECKPOINT (D-572/D-573, 2026-10-04) (current, see STATE.md).
+
+---

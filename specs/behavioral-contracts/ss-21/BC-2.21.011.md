@@ -1,7 +1,7 @@
 ---
 document_type: behavioral-contract
 level: L3
-version: "1.0"
+version: "1.1"
 status: draft
 producer: product-owner
 timestamp: 2026-09-06T00:00:00Z
@@ -13,7 +13,10 @@ subsystem: SS-21
 capability: CAP-21
 lifecycle_status: active
 introduced: feature-s7comm
-modified: []
+modified:
+  - version: "1.1"
+    date: 2026-10-04
+    change: "STORY-188 per-story adversarial pass 1 remediation (F-07): replaced every (planned) Architecture marker and the TBD Stories placeholder with concrete anchors verified against worktree HEAD f33b4337 and Stories: STORY-188; added verifying-test list. No behavioral change."
 deprecated: null
 deprecated_by: null
 replacement: null
@@ -86,9 +89,9 @@ to BC-2.21.017.)
 | L2 Capability | CAP-21 ("S7comm Analysis") per domain/capabilities/cap-21-s7comm-analysis.md §CAP-21 |
 | Capability Anchor Justification | CAP-21 ("S7comm Analysis") per domain/capabilities/cap-21-s7comm-analysis.md §CAP-21 |
 | L2 Domain Invariants | None directly |
-| Architecture Module | SS-21 (`src/analyzer/s7comm.rs`, planned) |
+| Architecture Module | SS-21 (`src/analyzer/s7comm.rs`: `S7ClassicFunction` :339, `classify_job_ack_function` :385) |
 | ADR | ADR-014 Decision 5 |
-| Stories | (TBD — story-writer assigns in F3) |
+| Stories | STORY-188 |
 | Feature | feature-s7comm |
 | MITRE Techniques | (none — no seeded technique keys on Read Var per `.factory/research/s7comm-mitre-ics-tagging.md`) |
 
@@ -99,7 +102,8 @@ to BC-2.21.017.)
 
 ## Architecture Anchors
 
-- `src/analyzer/s7comm.rs` (planned) — `S7ClassicFunction::ReadVar` match arm
+- `src/analyzer/s7comm.rs:385` — `0x04 => S7ClassicFunction::ReadVar` arm of `classify_job_ack_function` (`src/analyzer/s7comm.rs:385`, `pub fn classify_job_ack_function(data, header_len, param_length) -> S7ClassicFunction`); no area decode (the `ReadVar` variant at :339 carries no payload)
+- `tests/s7comm_analyzer_tests.rs` `mod story_188` — verifying tests: `test_BC_2_21_011_read_var_classified_no_area_decode`, `story_188::canonical::test_BC_2_21_011_canonical_read_var_db_classified` (canonical Read Var Job, S7ANY DB area 0x84 — framing layout per `.factory/research/s7comm-canonical-fc-vectors.md` §4, DF-CANONICAL-FRAME-HOLDOUT-001)
 
 ## Story Anchor
 

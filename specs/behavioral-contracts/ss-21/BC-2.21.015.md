@@ -1,7 +1,7 @@
 ---
 document_type: behavioral-contract
 level: L3
-version: "1.0"
+version: "1.1"
 status: draft
 producer: product-owner
 timestamp: 2026-09-06T00:00:00Z
@@ -13,7 +13,10 @@ subsystem: SS-21
 capability: CAP-21
 lifecycle_status: active
 introduced: feature-s7comm
-modified: []
+modified:
+  - version: "1.1"
+    date: 2026-10-04
+    change: "STORY-188 per-story adversarial pass 1 remediation (F-07): replaced every (planned) Architecture marker and the TBD Stories placeholder with concrete anchors verified against worktree HEAD f33b4337 and Stories: STORY-188; added verifying-test list. No behavioral change."
 deprecated: null
 deprecated_by: null
 replacement: null
@@ -117,9 +120,9 @@ fuzz-matching totality, mirroring the area-code totality treatment in BC-2.21.01
 | L2 Capability | CAP-21 ("S7comm Analysis") per domain/capabilities/cap-21-s7comm-analysis.md §CAP-21 |
 | Capability Anchor Justification | CAP-21 ("S7comm Analysis") per domain/capabilities/cap-21-s7comm-analysis.md §CAP-21 — resolves the ADR-014-flagged `0x28` PI-Service ambiguity that is load-bearing for correct downstream MITRE mapping |
 | L2 Domain Invariants | None directly |
-| Architecture Module | SS-21 (`src/analyzer/s7comm.rs`, planned) |
+| Architecture Module | SS-21 (`src/analyzer/s7comm.rs`: `S7ClassicFunction::PlcControl` :339, `PlcControlService` :321, `decode_plc_control_service` :462) |
 | ADR | ADR-014 Decision 5 ("`0x28` PI-Service ambiguity... MUST decode the service name") |
-| Stories | (TBD — story-writer assigns in F3) |
+| Stories | STORY-188 |
 | Feature | feature-s7comm |
 | MITRE Techniques | T0858 (Change Operating Mode, via `ProgramStart`), T0816 (Device Restart/Shutdown, via a decoded restart operation — **not yet a distinct `PlcControlService` variant in this BC; B2 must further decode `ProgramStart`'s sub-operation if restart-specific evidence is required, per Invariant 3**), T0889 (Modify Program, via `BlockActivate`/`BlockDelete`) — **classification surface only; emission is authored in part B2** |
 
@@ -130,8 +133,10 @@ fuzz-matching totality, mirroring the area-code totality treatment in BC-2.21.01
 
 ## Architecture Anchors
 
-- `src/analyzer/s7comm.rs` (planned) — `S7ClassicFunction::PlcControl(PlcControlService)` match arm, service-string decode helper
-- `enum PlcControlService { ProgramStart, BlockActivate, BlockDelete, MemoryCompress, RamToRom, Unrecognized }` (planned, this BC's design)
+- `src/analyzer/s7comm.rs:385` — `0x28 => S7ClassicFunction::PlcControl(decode_plc_control_service(param))` arm of `classify_job_ack_function` (`src/analyzer/s7comm.rs:385`, `pub fn classify_job_ack_function(data, header_len, param_length) -> S7ClassicFunction`)
+- `src/analyzer/s7comm.rs:462` — `fn decode_plc_control_service(param: &[u8]) -> PlcControlService` (service-string decode helper; byte-exact match, every shortfall -> `Unrecognized`)
+- `src/analyzer/s7comm.rs:321` — `pub enum PlcControlService { ProgramStart, BlockActivate, BlockDelete, MemoryCompress, RamToRom, Unrecognized }`
+- `tests/s7comm_analyzer_tests.rs` `mod story_188` — verifying tests: `test_BC_2_21_015_plc_control_service_string_decode`, `test_BC_2_21_015_plc_control_truncated_and_case_variants_unrecognized`, `test_BC_2_21_015_plc_control_trailing_bytes_after_service_string`, `story_188::canonical::test_BC_2_21_015_canonical_plc_control_p_program_classified` (canonical PLC Control "P_PROGRAM" Job — framing layout per `.factory/research/s7comm-canonical-fc-vectors.md` §2, DF-CANONICAL-FRAME-HOLDOUT-001)
 - `docs/adr/0014-s7comm-iso-on-tcp-stream-dispatch-and-parser-design.md §Decision 5` — "`0x28` PI-Service ambiguity" flag
 - `.factory/research/s7comm-mitre-ics-tagging.md` §Flagged / unverifiable, item 4 — service-string decode requirement
 

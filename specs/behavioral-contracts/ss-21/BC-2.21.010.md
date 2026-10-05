@@ -1,7 +1,7 @@
 ---
 document_type: behavioral-contract
 level: L3
-version: "1.0"
+version: "1.1"
 status: draft
 producer: product-owner
 timestamp: 2026-09-06T00:00:00Z
@@ -13,7 +13,10 @@ subsystem: SS-21
 capability: CAP-21
 lifecycle_status: active
 introduced: feature-s7comm
-modified: []
+modified:
+  - version: "1.1"
+    date: 2026-10-04
+    change: "STORY-188 per-story adversarial pass 1 remediation (F-07): replaced every (planned) Architecture marker and the TBD Stories placeholder with concrete anchors verified against worktree HEAD f33b4337 and Stories: STORY-188; added verifying-test list. No behavioral change."
 deprecated: null
 deprecated_by: null
 replacement: null
@@ -100,9 +103,9 @@ BC-2.21.017, the terminal `Unrecognized` fallback arm.)
 | L2 Capability | CAP-21 ("S7comm Analysis") per domain/capabilities/cap-21-s7comm-analysis.md §CAP-21 |
 | Capability Anchor Justification | CAP-21 ("S7comm Analysis") per domain/capabilities/cap-21-s7comm-analysis.md §CAP-21 — function-code classification is the core dissection behavior CAP-21's description names ("full S7comm PDU dissection (function codes...)") |
 | L2 Domain Invariants | None directly |
-| Architecture Module | SS-21 (`src/analyzer/s7comm.rs`, planned) |
+| Architecture Module | SS-21 (`src/analyzer/s7comm.rs`: `S7ClassicFunction` :339, `classify_job_ack_function` :385) |
 | ADR | ADR-014 Decision 5 (function-code table, informational for classification — MITRE emission is B2 scope) |
-| Stories | (TBD — story-writer assigns in F3) |
+| Stories | STORY-188 |
 | Feature | feature-s7comm |
 | MITRE Techniques | (none emitted by this BC — Setup Communication carries no MITRE mapping per `.factory/research/s7comm-mitre-ics-tagging.md` §S7comm wire-field basis, "session negotiation; scan/flood context" is a T0814/T0846 *aggregate* signal, not a per-PDU FC 0xF0 tag; B2 decides whether/how to use Setup Communication frequency as burst-detection evidence) |
 
@@ -114,8 +117,9 @@ BC-2.21.017, the terminal `Unrecognized` fallback arm.)
 
 ## Architecture Anchors
 
-- `src/analyzer/s7comm.rs` (planned) — `fn classify_job_ackdata_function(fc: u8) -> S7ClassicFunction`
-- `enum S7ClassicFunction { SetupCommunication, ReadVar, WriteVar(S7AreaCode), RequestDownload, DownloadBlock, DownloadEnded, StartUpload, Upload, EndUpload, PlcControl(PlcControlService), PlcStop, Unrecognized(u8) }` (planned, this BC's design — the classification surface part B2 maps MITRE techniques onto)
+- `src/analyzer/s7comm.rs:385` — `classify_job_ack_function` (`src/analyzer/s7comm.rs:385`, `pub fn classify_job_ack_function(data, header_len, param_length) -> S7ClassicFunction`), `0xF0 => S7ClassicFunction::SetupCommunication` arm; called from `dispatch_classic_s7comm` (:1033) for `Rosctr::Job` (~1084) and `Rosctr::AckData` (~1091) after the BC-2.21.009 bounds check
+- `src/analyzer/s7comm.rs:339` — `pub enum S7ClassicFunction { SetupCommunication, ReadVar, WriteVar(S7AreaCode), RequestDownload, DownloadBlock, DownloadEnded, StartUpload, Upload, EndUpload, PlcControl(PlcControlService), PlcStop, Unrecognized(u8), NoParameterBlock }` (the classification surface part B2 maps MITRE techniques onto; `NoParameterBlock` added for BC-2.21.017)
+- `tests/s7comm_analyzer_tests.rs` `mod story_188` — verifying tests: `test_BC_2_21_010_setup_communication_classified`, `test_BC_2_21_010_fc_classification_fixture_pcap_end_to_end`, `story_188::canonical::test_BC_2_21_010_canonical_setup_communication_ack_data_classified` (canonical Setup Communication Ack_Data vector, cnblogs source per BC-2.21.008 Canonical Test Vectors), plus `story_188::vp052::proptest_vp052_fc_classification_totality` (VP-052)
 - `.factory/research/s7comm-mitre-ics-tagging.md` §S7comm wire-field basis — FC table source
 
 ## Story Anchor

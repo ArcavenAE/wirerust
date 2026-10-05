@@ -1,7 +1,7 @@
 ---
 document_type: behavioral-contract
 level: L3
-version: "1.7"
+version: "1.8"
 status: draft
 producer: product-owner
 timestamp: 2026-09-24T12:00:00Z
@@ -14,6 +14,9 @@ capability: CAP-21
 lifecycle_status: active
 introduced: feature-s7comm
 modified:
+  - version: "1.8"
+    date: 2026-10-04
+    change: "STORY-188 per-story adversarial pass 1 (F-06, orchestrator decision 2026-10-04), sibling to BC-2.21.008 v1.10: Postcondition 3 extended so the 'no downstream consumption on bounds failure' obligation explicitly covers BC-2.21.008's Ack/Ack_Data error-class/code observation recording (list and count map) — a bounds-failing Ack/Ack_Data yields the T0814 finding and no observation. Verified against src/analyzer/s7comm.rs dispatch_classic_s7comm (:1033; recording sits inside the bounds-OK branch). No change to Preconditions/Invariants/Edge Cases.",
   - version: "1.7"
     date: 2026-09-25
     change: "STORY-187 per-story adversarial pass 13 (P13-F-1): Architecture Anchor test-count re-verification. The Architecture Anchors 'Tests anchor' entry was stale — it cited 7 tests from pass 3 (F-31), before tests added in passes 12-14. Re-grepped `tests/s7comm_analyzer_tests.rs` directly and replaced with the actual current count (12 `test_BC_2_21_009_*` functions) and the full function-name list, verified 2026-09-25 against worktree HEAD 38ff7ee1. Removed the stale 'no drift found (F-31)' claim, which no longer held. No change to Preconditions/Postconditions/Invariants/Edge Cases — Architecture Anchors traceability correction only."
@@ -86,6 +89,10 @@ instead of ASDU's implicit body length.
 3. No function-code or Userdata classification (BC-2.21.010 onward) is attempted for a
    frame that fails this check — classification always requires a successfully
    bounds-validated parameter block.
+   Likewise, no Ack/Ack_Data error-class/code observation (BC-2.21.008 Postcondition 4:
+   bounded list and exact count map) is recorded for a frame that fails this check —
+   recording is gated on the bounds check passing (F-06; verified by
+   `test_BC_2_21_008_bounds_failing_ack_data_records_no_ack_error_observation`).
 
 ## Invariants
 

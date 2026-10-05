@@ -1,7 +1,7 @@
 ---
 document_type: behavioral-contract
 level: L3
-version: "1.9"
+version: "1.10"
 status: draft
 producer: product-owner
 timestamp: 2026-09-24T12:00:00Z
@@ -14,6 +14,9 @@ capability: CAP-21
 lifecycle_status: active
 introduced: feature-s7comm
 modified:
+  - version: "1.10"
+    date: 2026-10-04
+    change: "STORY-188 per-story adversarial pass 1 remediation (F-05/F-06/F-07), human rulings 2026-10-04. Postcondition 4 rewritten: the stale 'STORY-188 ACs as currently written cover FC classification only ... story-writer must add an explicit AC' text is removed (AC-188-010 exists since STORY-188 v1.1) and replaced with the ratified Ack/Ack_Data error-observation surface (bounded ordered list, first MAX_S7_ACK_ERROR_OBSERVATIONS=1024 with saturating dropped count, PLUS an exact per-(rosctr,error_class,error_code) count map bounded by construction at <=131,072 keys with saturating counts; no stderr/log output per the ADR-0004 flooding rationale; zeros recorded identically, EC-004; Job frames never recorded). F-06 decision: recording is gated on BC-2.21.009's bounds check — a bounds-failing Ack/Ack_Data yields the T0814 malformed finding and NO observation (new EC-009). EC-007 and Architecture Anchors re-anchored from 'STORY-188 scope (untested here)' to the actual story_188 test names and post-story source anchors, verified against worktree HEAD f33b4337. Stories/Story Anchor rows updated (story-writer AC requirement discharged). Verification Properties header '(planned)' marker dropped (VP-051 registered)."
   - version: "1.9"
     date: 2026-09-25
     change: "STORY-187 final adversarial batch (passes 19-21): anchor count 8→9, EC-007 trace scope. Architecture Anchors 'Tests anchor' entry was stale again — a ninth `test_BC_2_21_008_*` function, `test_BC_2_21_008_canonical_ack_vector_verbatim` (parses BC-2.21.008's own canonical Ack 12-byte happy-path vector, `32 02 00 00 00 01 00 00 00 00 00 00`, byte-for-byte with no substitution, asserting the exact `S7commHeader` including `error_class: Some(0)`/`error_code: Some(0)`), was added since the v1.8/pass-13 count of 8. Re-grepped `tests/s7comm_analyzer_tests.rs` directly and replaced the Tests anchor with the actual current count (9 `test_BC_2_21_008_*` functions plus the joint proptest) and the full function-name list, verified 2026-09-25 against worktree HEAD b4fce34a. EC-007's trace to `test_BC_2_21_008_ack_data_nonzero_error_fields_with_parameter_block` is now annotated: that test covers only the extraction half of EC-007 (verifying `error_class`/`error_code` are correctly extracted as `Some` alongside a present, bounds-satisfying parameter block, and that `on_data` emits no finding) — the Group-3 function-code classification EC-007's Expected-Behavior column describes as proceeding 'independently at `data[12]`' (BC-2.21.010 onward) is STORY-188 scope and is untested by this file's BC-2.21.008 suite. Also re-grepped the other seven STORY-187 SS-21 BCs' (001, 002, 004, 005, 006, 007, 009) Tests-anchor lists against the same HEAD (b4fce34a): all seven counts (13/13/4/2/4/3/12 respectively) confirmed unchanged from their existing anchor text — no drift found, no edits made to those files. No change to Preconditions/Postconditions/Invariants/Edge Cases themselves — Architecture Anchors traceability correction only."
@@ -120,26 +123,28 @@ Some(data[11]), header_len: 12, .. })`.
    Ack_Data (`0x03`), by contrast, DOES carry a parameter block: Group 3 function-code
    classification (BC-2.21.010 through BC-2.21.017) proceeds normally for Ack_Data once
    BC-2.21.009's bounds check passes, reading `data[header_len]` at the corrected
-   `header_len == 12` offset (not `10`, per this BC's v1.2 correction) — this is a
-   behavior change from v1.0/v1.1, which (incorrectly) implied Ack_Data's parameter
-   block began at `data[10]`. This BC's own scope (STORY-187, parse-only) ends at
-   successfully extracting and returning `error_class`/`error_code` (Postcondition 2);
-   it does NOT itself require `S7commAnalyzer` to log, surface, or otherwise act on the
-   extracted values. That consumption obligation is out of scope for STORY-187's
-   parse-only contract and is **deferred to STORY-188** ("S7comm Job/Ack_Data
-   Function-Code Classification"), the next SS-21 story in the classic-S7comm
-   dissection chain that extends `S7commAnalyzer::on_data`'s ROSCTR-conditional
-   handling beyond parsing (STORY-189 covers Userdata, ROSCTR `0x07`, and does not
-   touch ROSCTR ∈ {Ack, AckData} at all, so STORY-188 is the correct target).
-   STORY-188's acceptance criteria as currently written cover Job/Ack_Data
-   function-code classification only, not Ack/Ack_Data (`0x02`/`0x03`) error-class/code
-   consumption — story-writer must add an explicit AC (or a follow-on task) to
-   STORY-188 covering "log/surface the observed error class/code for an Ack- or
-   Ack_Data-ROSCTR header" before that story is considered to close this requirement.
-   (Deferred per human ruling, STORY-187 per-story adversarial pass 1, F-13,
-   2026-09-24, re-scoped to explicitly include Ack_Data per the canonical-frame holdout
-   ruling, DF-CANONICAL-FRAME-HOLDOUT-001, 2026-09-24 — this requirement is NOT
-   deleted, only re-anchored.)
+   `header_len == 12` offset (not `10`, per this BC's v1.2 correction).
+   **Error-class/code consumption (STORY-188, ratified by human rulings 2026-10-04):**
+   for every Ack (`0x02`) and Ack_Data (`0x03`) header whose BC-2.21.009 bounds check
+   passes, `S7commAnalyzer` records the observed `(rosctr, error_class, error_code,
+   pdu_reference)` in two structures, with **no stderr/log output** (ADR-0004
+   flooding rationale — a hostile peer could otherwise force unbounded diagnostic
+   output):
+   (a) a bounded, arrival-ordered observation list holding the first
+   `MAX_S7_ACK_ERROR_OBSERVATIONS` (= 1024) observations, with a saturating dropped
+   count for every observation beyond that cap; and
+   (b) an exact per-`(rosctr, error_class, error_code)` count map, bounded by
+   construction (at most 2 x 256 x 256 = 131,072 distinct keys), with saturating
+   counts, so tallies stay exact past the list cap.
+   Zero error class/code values are recorded identically to non-zero ones (EC-004).
+   Job (`0x01`) and Userdata (`0x07`) frames carry no error fields and are never
+   recorded. **Bounds gating (F-06):** recording occurs only when BC-2.21.009's bounds
+   check passes; a bounds-failing Ack/Ack_Data is "treated identically to a malformed
+   header" (BC-2.21.009 Postcondition 2) — it yields the T0814 malformed-header
+   finding and NO observation (EC-009). (Deferred from STORY-187 per human ruling,
+   STORY-187 per-story adversarial pass 1, F-13, 2026-09-24, re-scoped to include
+   Ack_Data per DF-CANONICAL-FRAME-HOLDOUT-001; discharged by STORY-188, AC-188-010.)
+   Parse-only scope of STORY-187 (Postconditions 1-3) is unchanged.
 
 ## Invariants
 
@@ -165,8 +170,9 @@ Some(data[11]), header_len: 12, .. })`.
 | EC-004 | `error_class == 0x00` and `error_code == 0x0000`-equivalent (no error reported), either ROSCTR | Extracted verbatim; a zero error class/code is a normal successful-Ack(_Data) value, not itself flagged |
 | EC-005 | `data[1] == 0x03` (Ack_Data), `data.len() == 10` (only the common header present) | Returns `None` — truncated Ack_Data, same malformed-header dedup flag as EC-001 |
 | EC-006 | `data[1] == 0x03` (Ack_Data), `data.len() == 11` (one byte short of the 12-byte minimum) | Returns `None` — truncated Ack_Data |
-| EC-007 | `data[1] == 0x03` (Ack_Data), `data.len() >= 12`, non-zero `error_class`/`error_code` alongside a non-empty parameter block (real-world shape, e.g. a Setup Communication response) | `Some(...)` with `header_len: 12`; error fields extracted AND Group 3 function-code classification proceeds independently at `data[12]` (BC-2.21.010 onward). Traced to `test_BC_2_21_008_ack_data_nonzero_error_fields_with_parameter_block` — that test covers the extraction half only (error fields correctly `Some`, bounds-satisfying parameter block, no spurious finding); Group-3 FC classification at `data[12]` is STORY-188 scope (untested here). |
+| EC-007 | `data[1] == 0x03` (Ack_Data), `data.len() >= 12`, non-zero `error_class`/`error_code` alongside a non-empty parameter block (real-world shape, e.g. a Setup Communication response) | `Some(...)` with `header_len: 12`; error fields extracted AND Group 3 function-code classification proceeds independently at `data[12]` (BC-2.21.010 onward). Traced to `test_BC_2_21_008_ack_data_nonzero_error_fields_with_parameter_block` — that test covers the extraction half only (error fields correctly `Some`, bounds-satisfying parameter block, no spurious finding); Group-3 FC classification at `data[12]` and the Ack_Data error observation are verified by `story_188::canonical::test_BC_2_21_010_canonical_setup_communication_ack_data_classified` (canonical Setup Communication Ack_Data: FC 0xF0 classified `SetupCommunication` and the zero error pair recorded), `test_BC_2_21_008_ack_data_error_class_code_consumed_and_logged`, and `test_BC_2_21_008_ack_error_observation_captures_pdu_reference`. |
 | EC-008 | `data[1] == 0x03` (Ack_Data), `error_class == 0x00`/`error_code == 0x00` alongside a populated parameter block (the common real-world shape corroborated by the cited canonical-frame test vectors — cnblogs/Yiqisoft/Inductive Automation KB — and consistent with the field layout documented by the cited prose source, Kleinmann & Wool 2014 (Ack_Data/ROSCTR 3 only), and permitted design references — icsnpp-s7comm, python-snap7, libs7comm (corrected 2026-09-24, F-50 — v1.6 listed K&W among the "permitted design references," a distinct ADR-014 Decision 4 category K&W does not belong to)) | Both the zero error fields and the parameter-block FC classification are extracted/performed independently; a zero error class/code on Ack_Data does not suppress FC classification |
+| EC-009 | `data[1] ∈ {0x02, 0x03}` and `data.len() >= 12` (header parses `Some`) but declared `header_len + param_length + data_length` exceeds `data.len()` (BC-2.21.009 bounds check FAILS) | The T0814 malformed-header finding is emitted (BC-2.21.009 Postcondition 2); the Ack/Ack_Data is NOT recorded as an error observation (neither list nor count map) and no FC classification is attempted (F-06 ruling 2026-10-04). Traced to `test_BC_2_21_008_bounds_failing_ack_data_records_no_ack_error_observation`. |
 
 ## Canonical Test Vectors
 
@@ -181,8 +187,8 @@ Some(data[11]), header_len: 12, .. })`.
 
 ## Verification Properties
 
-| Property | Proof Method (planned) |
-|----------|-------------------------|
+| Property | Proof Method |
+|----------|--------------|
 | Ack/Ack_Data-specific 12-byte minimum is correctly enforced; `error_class`/`error_code` extraction is correct and produced exactly for ROSCTR ∈ {Ack, AckData}, never for Job/Userdata | VP-051 (Kani P0) — "S7comm Header Bounds-Before-Slice Safety," joint with BC-2.21.004/BC-2.21.006/BC-2.21.007/BC-2.21.009 (see VP Anchors below); registered F2 INTEGRATE sub-burst per VP-INDEX.md (this BC registered to VP-051's `source_bc`, F-43; sibling set expanded to five BCs under F-49); cargo-fuzz P1 (VP-055) provides complementary combined-chain no-panic coverage |
 
 ## Traceability
@@ -194,7 +200,7 @@ Some(data[11]), header_len: 12, .. })`.
 | L2 Domain Invariants | None directly |
 | Architecture Module | SS-21 (`src/analyzer/s7comm.rs`) |
 | ADR | ADR-014 Decision 9 |
-| Stories | STORY-187 (parse/extraction of `error_class`/`error_code` for both Ack and Ack_Data, Postconditions 1-3); STORY-188 (consumption/logging of the extracted values for both ROSCTR values, Postcondition 4 — deferred per F-13 ruling 2026-09-24, rescoped to explicitly include Ack_Data per the canonical-frame holdout ruling DF-CANONICAL-FRAME-HOLDOUT-001, 2026-09-24; story-writer must add an explicit AC) |
+| Stories | STORY-187 (parse/extraction of `error_class`/`error_code` for both Ack and Ack_Data, Postconditions 1-3); STORY-188 (error-class/code consumption — bounded observation list + exact count map — for both ROSCTR values, Postcondition 4, AC-188-010; originally deferred per F-13 ruling 2026-09-24, rescoped to include Ack_Data per DF-CANONICAL-FRAME-HOLDOUT-001, 2026-09-24; discharged) |
 | Feature | feature-s7comm |
 | MITRE Techniques | T0814 (Denial of Service) — malformed-header (truncated-Ack/Ack_Data) anomaly signal only; emission wiring is a B2 responsibility |
 
@@ -208,14 +214,16 @@ Some(data[11]), header_len: 12, .. })`.
 ## Architecture Anchors
 
 - `src/analyzer/s7comm.rs` — `pub fn parse_s7comm_header`, shared `0x02 | 0x03` match arm implementing the Ack/Ack_Data `header_len == 12` branch (implemented, STORY-187)
-- `tests/s7comm_analyzer_tests.rs` — Tests anchor: 9 `test_BC_2_21_008_*` functions (re-counted by direct grep, verified 2026-09-25 against worktree HEAD b4fce34a): `test_BC_2_21_008_canonical_ack_data_setup_communication_response_on_data`, `test_BC_2_21_008_ack_rosctr_12_byte_minimum_and_error_fields`, `test_BC_2_21_008_canonical_ack_vector_verbatim`, `test_BC_2_21_008_ack_data_12_byte_header_and_error_fields`, `test_BC_2_21_008_truncated_ack_data_returns_none`, `test_BC_2_21_008_error_fields_none_for_job_and_userdata_rosctr`, `test_BC_2_21_008_truncated_ack_on_data_emits_t0814_once`, `test_BC_2_21_008_truncated_ack_data_on_data_emits_t0814_once`, `test_BC_2_21_008_ack_data_nonzero_error_fields_with_parameter_block`; plus the joint `proptest_bc_2_21_006_008_some_iff_rosctr_and_length_conditional` (shared with BC-2.21.006/007). The ninth, `test_BC_2_21_008_canonical_ack_vector_verbatim`, is newly added since the prior anchor count (8, pass 13/v1.8); it parses this BC's own canonical Ack 12-byte happy-path vector (Canonical Test Vectors table) verbatim — no byte substituted — and asserts `Some({rosctr: Ack, error_class: Some(0), error_code: Some(0), header_len: 12})` exactly. EC-007 (`data.len() >= 12`, non-zero error fields alongside a non-empty parameter block) is traced to `test_BC_2_21_008_ack_data_nonzero_error_fields_with_parameter_block` — extraction half only; Group-3 FC classification at `data[12]` is STORY-188 scope (untested here; see Edge Cases table).
+- `tests/s7comm_analyzer_tests.rs` — Tests anchor: 9 `test_BC_2_21_008_*` functions (re-counted by direct grep, verified 2026-09-25 against worktree HEAD b4fce34a): `test_BC_2_21_008_canonical_ack_data_setup_communication_response_on_data`, `test_BC_2_21_008_ack_rosctr_12_byte_minimum_and_error_fields`, `test_BC_2_21_008_canonical_ack_vector_verbatim`, `test_BC_2_21_008_ack_data_12_byte_header_and_error_fields`, `test_BC_2_21_008_truncated_ack_data_returns_none`, `test_BC_2_21_008_error_fields_none_for_job_and_userdata_rosctr`, `test_BC_2_21_008_truncated_ack_on_data_emits_t0814_once`, `test_BC_2_21_008_truncated_ack_data_on_data_emits_t0814_once`, `test_BC_2_21_008_ack_data_nonzero_error_fields_with_parameter_block`; plus the joint `proptest_bc_2_21_006_008_some_iff_rosctr_and_length_conditional` (shared with BC-2.21.006/007). The ninth, `test_BC_2_21_008_canonical_ack_vector_verbatim`, is newly added since the prior anchor count (8, pass 13/v1.8); it parses this BC's own canonical Ack 12-byte happy-path vector (Canonical Test Vectors table) verbatim — no byte substituted — and asserts `Some({rosctr: Ack, error_class: Some(0), error_code: Some(0), header_len: 12})` exactly. EC-007 (`data.len() >= 12`, non-zero error fields alongside a non-empty parameter block) is traced to `test_BC_2_21_008_ack_data_nonzero_error_fields_with_parameter_block` — extraction half only; Group-3 FC classification at `data[12]` is verified by the STORY-188 tests listed below (see Edge Cases table, EC-007).
+- `src/analyzer/s7comm.rs` — post-STORY-188 anchors (verified against worktree HEAD f33b4337): `pub const MAX_S7_ACK_ERROR_OBSERVATIONS: usize = 1024` (line 116); `pub struct S7AckErrorKey` (line 128, count-map key: rosctr + error_class + error_code); `pub struct S7AckErrorObservation` (line 141, list element incl. `pdu_reference`); accessors `S7commAnalyzer::ack_error_observations` (627), `ack_error_counts` (633, `BTreeMap<S7AckErrorKey, u64>`), `ack_error_observations_dropped` (638); `fn record_ack_error_observations` (843, folds the per-call buffer into list + count map with saturating dropped/count arithmetic); `fn dispatch_classic_s7comm` (1033; the `Rosctr::AckData` arm at ~1090 calls `record_ack_error` then `classify_job_ack_function`, the bare `Rosctr::Ack` arm records only; the whole match sits inside the BC-2.21.009 bounds-OK branch, so the else branch emits only the malformed-header finding); `fn record_ack_error` (1120, pushes one `S7AckErrorObservation`; Job/Userdata have `None` error fields and record nothing)
+- `tests/s7comm_analyzer_tests.rs` `mod story_188` — Postcondition 4 / EC-004 / EC-007 / EC-009 tests: `test_BC_2_21_008_ack_error_class_code_consumed_and_logged`, `test_BC_2_21_008_ack_data_error_class_code_consumed_and_logged`, `test_BC_2_21_008_zero_error_class_code_logged_for_ack_and_ack_data`, `test_BC_2_21_008_job_frames_record_no_ack_error_observation`, `test_BC_2_21_008_job_frames_contribute_no_histogram_key`, `test_BC_2_21_008_ack_error_observations_bounded_by_cap_with_dropped_count`, `test_BC_2_21_008_ack_error_counts_exact_for_mixed_frames`, `test_BC_2_21_008_ack_error_histogram_counts_beyond_list_cap`, `test_BC_2_21_008_ack_error_observation_captures_pdu_reference`, `test_BC_2_21_008_bounds_failing_ack_data_records_no_ack_error_observation`, and canonical `story_188::canonical::test_BC_2_21_010_canonical_setup_communication_ack_data_classified`
 
 ## Story Anchor
 
-STORY-187 (parse/extraction for both Ack and Ack_Data, Postconditions 1-3).
-Postcondition 4's error-class/code consumption (logging) obligation is re-anchored to
-STORY-188 per human ruling, F-13, 2026-09-24, rescoped to explicitly include Ack_Data
-per DF-CANONICAL-FRAME-HOLDOUT-001, 2026-09-24 — see Postcondition 4.
+STORY-187 (parse/extraction for both Ack and Ack_Data, Postconditions 1-3);
+STORY-188 (Postcondition 4 error-class/code consumption, AC-188-010; deferred from
+STORY-187 per human ruling F-13, 2026-09-24, rescoped to include Ack_Data per
+DF-CANONICAL-FRAME-HOLDOUT-001, 2026-09-24; surface ratified 2026-10-04).
 
 ## VP Anchors
 

@@ -1,7 +1,7 @@
 ---
 document_type: behavioral-contract
 level: L3
-version: "1.0"
+version: "1.1"
 status: draft
 producer: product-owner
 timestamp: 2026-09-06T00:00:00Z
@@ -13,7 +13,10 @@ subsystem: SS-21
 capability: CAP-21
 lifecycle_status: active
 introduced: feature-s7comm
-modified: []
+modified:
+  - version: "1.1"
+    date: 2026-10-04
+    change: "STORY-188 per-story adversarial pass 1 remediation (F-07): replaced every (planned) Architecture marker and the TBD Stories placeholder with concrete anchors verified against worktree HEAD f33b4337 and Stories: STORY-188; added verifying-test list. Postcondition 3 now records the accepted 0xFF placeholder collision (F-09, NIT, accepted residual) and pins the descriptor-length rule (<14 bytes or syntax id != 0x10 -> placeholder) with its boundary test. No behavioral change to the implementation."
 deprecated: null
 deprecated_by: null
 replacement: null
@@ -62,6 +65,17 @@ Invariant 2). `S7AreaCode` maps the recognized area values: `0x80` Direct Periph
    concretely, the classification remains `WriteVar` with an area value signaling
    "not decoded," never a hard reject of the whole frame (FC-level classification is
    still valid even when finer address decoding fails).
+   **Pinned descriptor-length rule (F-09):** the first item descriptor is decoded only
+   when the parameter block is at least 14 bytes (FC + item count + the 12-byte S7ANY
+   item) AND the syntax-id byte at parameter offset 4 equals `0x10`; a parameter block
+   shorter than 14 bytes, or a syntax id other than `0x10`, yields the not-decoded
+   placeholder `S7AreaCode::Unrecognized(0xFF)`. Boundary verified by
+   `test_BC_2_21_012_write_var_descriptor_length_boundary_11_12_13_14`.
+   **Accepted collision (NIT, accepted residual, F-09):** the not-decoded placeholder
+   `Unrecognized(0xFF)` is the same value a genuine area byte `0xFF` produces
+   (`area_code_from_byte(0xFF)` -> `Unrecognized(0xFF)`), so the two cases are
+   indistinguishable to consumers; this is accepted because both are non-T0835/T0836
+   areas and the placeholder is mandated by this postcondition.
 4. Multi-item Write Var parameter blocks (more than one address item in a single PDU)
    are classified using only the first item's area code; any additional items are not
    independently classified in this part.
@@ -113,9 +127,9 @@ totality treatment.)
 | L2 Capability | CAP-21 ("S7comm Analysis") per domain/capabilities/cap-21-s7comm-analysis.md §CAP-21 |
 | Capability Anchor Justification | CAP-21 ("S7comm Analysis") per domain/capabilities/cap-21-s7comm-analysis.md §CAP-21 — the area-code classification surface B2's T0835/T0836 emission call-sites key on directly (ADR-014 Decision 5) |
 | L2 Domain Invariants | None directly |
-| Architecture Module | SS-21 (`src/analyzer/s7comm.rs`, planned) |
+| Architecture Module | SS-21 (`src/analyzer/s7comm.rs`: `S7ClassicFunction::WriteVar` :339, `S7AreaCode` :297, `area_code_from_byte` :422, `decode_write_var_area` :446) |
 | ADR | ADR-014 Decision 5 (T0835/T0836 area-code table, informational for classification — emission is B2 scope) |
-| Stories | (TBD — story-writer assigns in F3) |
+| Stories | STORY-188 |
 | Feature | feature-s7comm |
 | MITRE Techniques | T0835 (Manipulate I/O Image, areas `0x80`/`0x81`/`0x82`), T0836 (Modify Parameter, areas `0x83`/`0x84`) — classification surface named per ADR-014 Decision 5; **emission (verdict/confidence/dedup) is authored in part B2, not this BC** |
 
@@ -127,8 +141,10 @@ totality treatment.)
 
 ## Architecture Anchors
 
-- `src/analyzer/s7comm.rs` (planned) — `S7ClassicFunction::WriteVar(S7AreaCode)` match arm and item-descriptor area-byte extraction
-- `enum S7AreaCode { DirectPeripheral, Inputs, Outputs, Markers, DataBlock, InstanceDb, Counters, Timers, Unrecognized(u8) }` (planned, this BC's design)
+- `src/analyzer/s7comm.rs:385` — `0x05 => S7ClassicFunction::WriteVar(decode_write_var_area(param))` arm of `classify_job_ack_function` (`src/analyzer/s7comm.rs:385`, `pub fn classify_job_ack_function(data, header_len, param_length) -> S7ClassicFunction`)
+- `src/analyzer/s7comm.rs:446` — `fn decode_write_var_area(param: &[u8]) -> S7AreaCode` (first-item area decode: `param.len() < 14` or syntax id `param[4] != 0x10` -> `Unrecognized(0xFF)`; area byte at `param[10]`); `src/analyzer/s7comm.rs:422` — `fn area_code_from_byte`
+- `src/analyzer/s7comm.rs:297` — `pub enum S7AreaCode { DirectPeripheral, Inputs, Outputs, Markers, DataBlock, InstanceDb, Counters, Timers, Unrecognized(u8) }`
+- `tests/s7comm_analyzer_tests.rs` `mod story_188` — verifying tests: `test_BC_2_21_012_write_var_area_code_extraction`, `story_188::area_exhaustive::test_BC_2_21_012_write_var_area_code_exhaustive_over_all_u8` (proptest, Invariant 1), `test_BC_2_21_012_write_var_descriptor_length_boundary_11_12_13_14` (F-02 / F-09 boundary), `story_188::canonical::test_BC_2_21_012_canonical_write_var_db_classified`, `story_188::canonical::test_BC_2_21_012_canonical_write_var_outputs_classified` (canonical Write Var Job vectors — framing layout per `.factory/research/s7comm-canonical-fc-vectors.md` §1, DF-CANONICAL-FRAME-HOLDOUT-001)
 - `.factory/research/s7comm-mitre-ics-tagging.md` §S7ANY area codes — source table
 
 ## Story Anchor

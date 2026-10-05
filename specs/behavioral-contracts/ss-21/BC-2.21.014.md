@@ -1,7 +1,7 @@
 ---
 document_type: behavioral-contract
 level: L3
-version: "1.0"
+version: "1.1"
 status: draft
 producer: product-owner
 timestamp: 2026-09-06T00:00:00Z
@@ -13,7 +13,10 @@ subsystem: SS-21
 capability: CAP-21
 lifecycle_status: active
 introduced: feature-s7comm
-modified: []
+modified:
+  - version: "1.1"
+    date: 2026-10-04
+    change: "STORY-188 per-story adversarial pass 1 remediation (F-07): replaced every (planned) Architecture marker and the TBD Stories placeholder with concrete anchors verified against worktree HEAD f33b4337 and Stories: STORY-188; added verifying-test list. No behavioral change."
 deprecated: null
 deprecated_by: null
 replacement: null
@@ -95,9 +98,9 @@ and `0x1D..=0x1F` sub-ranges never share a match arm.)
 | L2 Capability | CAP-21 ("S7comm Analysis") per domain/capabilities/cap-21-s7comm-analysis.md §CAP-21 |
 | Capability Anchor Justification | CAP-21 ("S7comm Analysis") per domain/capabilities/cap-21-s7comm-analysis.md §CAP-21 — the Upload/Download separation this capability's dissection scope must preserve to avoid false T0843/T0889 evidence |
 | L2 Domain Invariants | None directly |
-| Architecture Module | SS-21 (`src/analyzer/s7comm.rs`, planned) |
+| Architecture Module | SS-21 (`src/analyzer/s7comm.rs`: `S7ClassicFunction` :339, `classify_job_ack_function` :385) |
 | ADR | ADR-014 Decision 5 |
-| Stories | (TBD — story-writer assigns in F3) |
+| Stories | STORY-188 |
 | Feature | feature-s7comm |
 | MITRE Techniques | (none — Upload is explicitly excluded from T0843/T0889 evidence per the source research; this BC's contract is a negative-evidence guarantee for B2, not a positive emission surface) |
 
@@ -107,7 +110,8 @@ and `0x1D..=0x1F` sub-ranges never share a match arm.)
 
 ## Architecture Anchors
 
-- `src/analyzer/s7comm.rs` (planned) — `S7ClassicFunction::{StartUpload, Upload, EndUpload}` match arms, kept structurally separate from the Download arms
+- `src/analyzer/s7comm.rs:385` — `0x1D`/`0x1E`/`0x1F` arms of `classify_job_ack_function` (`src/analyzer/s7comm.rs:385`, `pub fn classify_job_ack_function(data, header_len, param_length) -> S7ClassicFunction`) mapping to `S7ClassicFunction::{StartUpload, Upload, EndUpload}` (:339), kept structurally separate from the Download arms
+- `tests/s7comm_analyzer_tests.rs` `mod story_188` — verifying tests: `test_BC_2_21_014_upload_triad_classified_disjoint_from_download`, `story_188::vp054::proptest_vp054_download_upload_structural_disjointness` (VP-054)
 - `.factory/research/s7comm-mitre-ics-tagging.md` §S7comm wire-field basis — "`0x1D` Start Upload: block upload PLC→station (backup/collection, **not** program download)"
 
 ## Story Anchor

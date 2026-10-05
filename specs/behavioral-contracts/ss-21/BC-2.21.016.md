@@ -1,7 +1,7 @@
 ---
 document_type: behavioral-contract
 level: L3
-version: "1.0"
+version: "1.1"
 status: draft
 producer: product-owner
 timestamp: 2026-09-06T00:00:00Z
@@ -13,7 +13,10 @@ subsystem: SS-21
 capability: CAP-21
 lifecycle_status: active
 introduced: feature-s7comm
-modified: []
+modified:
+  - version: "1.1"
+    date: 2026-10-04
+    change: "STORY-188 per-story adversarial pass 1 remediation (F-07): replaced every (planned) Architecture marker and the TBD Stories placeholder with concrete anchors verified against worktree HEAD f33b4337 and Stories: STORY-188; added verifying-test list. Postcondition 3 added recording that PLC Stop wire layout differs from PLC Control (5 reserved bytes, no 0xFD, no u16 block-arg length) and classification is by FC only. Canonical-vector test cited under its corrected name (`test_BC_2_21_016_canonical_plc_stop_classified`, formerly mis-named for BC-2.21.014 — test-name defect fixed)."
 deprecated: null
 deprecated_by: null
 replacement: null
@@ -48,6 +51,7 @@ one BC would understate the material difference in decode complexity ADR-014 fla
 
 1. The frame is classified `S7ClassicFunction::PlcStop`.
 2. No sub-operation decode is required or attempted — `0x29` has exactly one meaning.
+3. **Wire layout differs from PLC Control (`0x28`)** (canonical vector, `.factory/research/s7comm-canonical-fc-vectors.md` §3, DF-CANONICAL-FRAME-HOLDOUT-001): a PLC Stop parameter block carries 5 reserved bytes after the FC byte, NO `0xFD` marker and NO `u16` block-argument length (the layout BC-2.21.015's service decode relies on). Classification is therefore **by FC byte only**; the BC-2.21.015 `0x28` layout/decode is never applied to `0x29`.
 
 ## Invariants
 
@@ -79,9 +83,9 @@ anchored to BC-2.21.017.)
 | L2 Capability | CAP-21 ("S7comm Analysis") per domain/capabilities/cap-21-s7comm-analysis.md §CAP-21 |
 | Capability Anchor Justification | CAP-21 ("S7comm Analysis") per domain/capabilities/cap-21-s7comm-analysis.md §CAP-21 |
 | L2 Domain Invariants | None directly |
-| Architecture Module | SS-21 (`src/analyzer/s7comm.rs`, planned) |
+| Architecture Module | SS-21 (`src/analyzer/s7comm.rs`: `S7ClassicFunction::PlcStop` :339, `classify_job_ack_function` :385) |
 | ADR | ADR-014 Decision 5 |
-| Stories | (TBD — story-writer assigns in F3) |
+| Stories | STORY-188 |
 | Feature | feature-s7comm |
 | MITRE Techniques | T0858 (Change Operating Mode, run→stop) — **classification surface only; emission is authored in part B2** |
 
@@ -91,7 +95,8 @@ anchored to BC-2.21.017.)
 
 ## Architecture Anchors
 
-- `src/analyzer/s7comm.rs` (planned) — `S7ClassicFunction::PlcStop` match arm
+- `src/analyzer/s7comm.rs:385` — `0x29 => S7ClassicFunction::PlcStop` arm of `classify_job_ack_function` (`src/analyzer/s7comm.rs:385`, `pub fn classify_job_ack_function(data, header_len, param_length) -> S7ClassicFunction`); deliberately does NOT call `decode_plc_control_service` (:462) because the layouts differ; `PlcStop` variant at :339 carries no payload
+- `tests/s7comm_analyzer_tests.rs` `mod story_188` — verifying tests: `test_BC_2_21_016_plc_stop_classified`, `story_188::canonical::test_BC_2_21_016_canonical_plc_stop_classified` (canonical PLC Stop Job — framing layout per `.factory/research/s7comm-canonical-fc-vectors.md` §3, DF-CANONICAL-FRAME-HOLDOUT-001)
 
 ## Story Anchor
 
