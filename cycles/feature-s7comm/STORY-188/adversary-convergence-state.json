@@ -3,10 +3,12 @@
   "story": "STORY-188",
   "cycle": "feature-s7comm",
   "criterion": "BC-5.39.001",
-  "passes_total": 4,
-  "passes_clean": [],
+  "passes_total": 5,
+  "passes_clean": [
+    5
+  ],
   "closing_trio": [],
-  "last_classification": "HAS_FINDINGS",
+  "last_classification": "NITPICK_ONLY",
   "verdict": "IN_PROGRESS",
   "human_rulings": [
     {
@@ -316,6 +318,47 @@
         "539645f1"
       ],
       "extra_defects": "product-owner full ss-21 YAML frontmatter parse check found 4 more invalid frontmatters (BC-2.21.010/013/015/016 unescaped inner double quotes in change: strings) - fixed; 41/41 parse"
+    },
+    "pass_5": {
+      "classification": "NITPICK_ONLY",
+      "context": "fresh context, Phase A attestation valid at branch 539645f1 / develop 17b00031",
+      "pass4_verification": "all 7 pass-4 findings VERIFIED-FIXED; all anchors re-verified",
+      "counts": {
+        "MAJOR": 0,
+        "MINOR": 0,
+        "NIT": 4
+      },
+      "items": [
+        {
+          "id": "P5-F-01",
+          "severity": "NIT",
+          "summary": "BC-2.21.017 anchors omit unsliceable-block test",
+          "disposition": "fixed"
+        },
+        {
+          "id": "P5-F-02",
+          "severity": "NIT",
+          "summary": "AC<->test traceability (AC-188-009 Test line; fixture test docstring AC range)",
+          "disposition": "fixed",
+          "note": "AC<->test sweep also added two missing AC-188-006 test citations"
+        },
+        {
+          "id": "P5-F-03",
+          "severity": "NIT",
+          "summary": "fixture builder cites EC-007/EC-008 for a non-zero-pair scenario",
+          "disposition": "fixed"
+        },
+        {
+          "id": "P5-F-04",
+          "severity": "NIT",
+          "summary": "one 130-col module-doc line",
+          "disposition": "fixed"
+        }
+      ],
+      "fix_commits": [
+        "360df9b5",
+        "731b3ec8"
+      ]
     }
   },
   "formal_verification": {
@@ -334,18 +377,19 @@
   "merge_status": "NOT_YET_MERGED",
   "branch": "feature/STORY-188-s7comm-function-code-classification",
   "worktree": ".worktrees/STORY-188",
-  "head": "539645f1",
+  "head": "731b3ec8",
   "base": "develop 17b00031",
   "timestamp": "2026-10-05T00:00:00Z",
   "producer": "state-manager",
-  "note": "Pass 4 remediated; pass 5 (fresh context) is next. Supplement to the eventual convergence-report.md.",
+  "note": "Pass 5 NITPICK_ONLY (1/3 clean), NITs fixed; pass 6 (fresh context) is next. Supplement to the eventual convergence-report.md.",
   "spec_versions": {
     "BC-2.21.008": "v1.12",
-    "BC-2.21.009": "v1.11",
-    "BC-2.21.010/013/015/016/017": "v1.4",
+    "BC-2.21.009": "v1.12",
+    "BC-2.21.010/013/015/016/017": "v1.4 (BC-2.21.017 now v1.5)",
     "BC-2.21.011/012/014": "v1.3",
-    "BC-INDEX": "v2.38.22",
-    "STORY-188": "v1.6 (input-hash 2191d38)"
+    "BC-INDEX": "v2.38.23",
+    "STORY-188": "v1.7 (input-hash ba2851e)",
+    "BC-2.21.017": "v1.5"
   },
   "reverse_check_sweep": {
     "scope": "BC-2.21.008..017 (VP both directions, test citations, description vs PC/EC, line anchors, overclaims)",

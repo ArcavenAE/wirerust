@@ -1,7 +1,7 @@
 ---
 document_type: behavioral-contract
 level: L3
-version: "1.4"
+version: "1.5"
 status: draft
 producer: product-owner
 timestamp: 2026-09-06T00:00:00Z
@@ -14,6 +14,9 @@ capability: CAP-21
 lifecycle_status: active
 introduced: feature-s7comm
 modified:
+  - version: "1.5"
+    date: 2026-10-05
+    change: "STORY-188 pass-5 P5-F-01 (NIT, spec part): Architecture Anchors verifying-test list now includes `test_BC_2_21_017_unsliceable_parameter_block_returns_no_parameter_block` (already cited by EC-005; it is the sole verifier of the defensive unsliceable-block `NoParameterBlock` return). No change to Preconditions/Postconditions/Invariants/Edge Cases."
   - version: "1.4"
     date: 2026-10-05
     change: "STORY-188 pass-4 P4-F-01 (spec part): EC-005 now cites `test_BC_2_21_017_unsliceable_parameter_block_returns_no_parameter_block` and states the VP-051 Kani harness (`story_188::vp051_kani::verify_classify_job_ack_function_param_slicing_safe`) does NOT cover the unsliceable-block path (it returns early unless `s7comm_bounds_ok`). CORRECTION to the v1.3 row below: it said the defensive `NoParameterBlock` return is 'asserted ... by the STORY-188 Kani harness' - that is wrong; the return is covered only by the named unit test, and the harness proves slicing safety solely on bounds-ok inputs. Historical v1.3 row left unaltered."
@@ -138,7 +141,7 @@ distinct condition from "FC byte present but unrecognized."
 ## Architecture Anchors
 
 - `src/analyzer/s7comm.rs:417` — `other => S7ClassicFunction::Unrecognized(other)` terminal arm and the `param_length == 0` / unsliceable-block `NoParameterBlock` early returns of `classify_job_ack_function` (function at `src/analyzer/s7comm.rs:385`, `pub fn classify_job_ack_function(data, header_len, param_length) -> S7ClassicFunction`); variants at :339
-- `tests/s7comm_analyzer_tests.rs` `mod story_188` — verifying tests: `test_BC_2_21_017_unrecognized_fc_and_empty_parameter_block`, `test_BC_2_21_017_fc_classification_total_over_all_256_values`, `story_188::vp052::proptest_vp052_fc_classification_totality` (VP-052)
+- `tests/s7comm_analyzer_tests.rs` `mod story_188` — verifying tests: `test_BC_2_21_017_unrecognized_fc_and_empty_parameter_block`, `test_BC_2_21_017_fc_classification_total_over_all_256_values`, `story_188::vp052::proptest_vp052_fc_classification_totality` (VP-052), `test_BC_2_21_017_unsliceable_parameter_block_returns_no_parameter_block` (EC-005 defensive unsliceable-block path; the VP-051 Kani harness does not cover it)
 
 ## Story Anchor
 

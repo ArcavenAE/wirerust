@@ -1,7 +1,7 @@
 ---
 document_type: behavioral-contract
 level: L3
-version: "1.11"
+version: "1.12"
 status: draft
 producer: product-owner
 timestamp: 2026-09-24T12:00:00Z
@@ -14,6 +14,9 @@ capability: CAP-21
 lifecycle_status: active
 introduced: feature-s7comm
 modified:
+  - version: "1.12"
+    date: 2026-10-05
+    change: "STORY-188 pass-5 P5-F-01 (NIT, spec part): Architecture Anchors STORY-188 cross-reference now also cites `story_188::test_BC_2_21_017_unsliceable_parameter_block_returns_no_parameter_block`, the unit test that verifies the `checked_add` / `data.get(header_len..end)` defensive `NoParameterBlock` guard path in `classify_job_ack_function` (the Kani harness does not cover it). No change to Preconditions/Postconditions/Invariants/Edge Cases."
   - version: "1.11"
     date: 2026-10-05
     change: "STORY-188 pass-4 P4-F-03 (MINOR): frontmatter YAML validity - v1.8 modified-entry trailing comma after the closing quote removed (invalid YAML). Sibling sweep: BC-2.21.009 Kani statements re-read - all already scoped to inputs passing s7comm_bounds_ok / bounded buffers; no overclaim found. No change to Preconditions/Postconditions/Invariants."
@@ -161,7 +164,7 @@ instead of ASDU's implicit body length.
 - `src/analyzer/s7comm.rs` — `pub fn s7comm_bounds_ok(header: &S7commHeader, data_len: usize) -> bool` pure-core free-function bounds check (implemented, STORY-187), called from the private helper `fn dispatch_classic_s7comm` immediately after `parse_s7comm_header` returns `Some`, before any parameter/data-block slicing — extracted as a standalone `pub fn` (rather than inlined at the call site) so the VP-051 Kani harness can call it directly
 - `tests/s7comm_analyzer_tests.rs` — Tests anchor: 12 `test_BC_2_21_009_*` functions (re-counted by direct grep, verified 2026-09-25 against worktree HEAD 38ff7ee1): `test_BC_2_21_009_dissection_bounded_to_own_tpkt_frame`, `test_BC_2_21_009_bounds_check_before_parameter_data_slice`, `test_BC_2_21_009_bounds_check_dedup_s2c`, `test_BC_2_21_009_s7comm_bounds_ok_helper_matches_bounds_decision`, `test_BC_2_21_009_bounds_check_passes_exact_match`, `test_BC_2_21_009_empty_parameter_and_data_blocks_trivial_pass`, `test_BC_2_21_009_overflow_free_arithmetic_max_values`, `test_BC_2_21_009_ack_header_len_12_bounds_check`, `test_BC_2_21_009_data_length_overrun_on_data_emits_t0814`, `test_BC_2_21_009_s7comm_bounds_ok_data_length_only_overrun`, `test_BC_2_21_009_bounds_failure_evidence_reports_declared_and_available`, `test_BC_2_21_009_bounds_failure_evidence_ack_data_header_len_12`.
 
-- `tests/s7comm_analyzer_tests.rs` `mod story_188` (STORY-188 cross-reference, Postcondition 3 recording-gating clause; BC-2.21.009 not in STORY-188's bcs) — `story_188::vp051_kani::verify_classify_job_ack_function_param_slicing_safe` (Kani harness, bounded to a <=32-byte symbolic buffer: the classifier's parameter-block slicing never panics and returns `NoParameterBlock` iff `param_length == 0`, **on any input that passes `s7comm_bounds_ok`** — the harness returns early unless `parse_s7comm_header` is `Some` and `s7comm_bounds_ok` holds, so unchecked-input safety is NOT proven by it; that safety comes from the `data.get(header_len..end)` / `checked_add` guards in `classify_job_ack_function` (`src/analyzer/s7comm.rs` ~:396), which yield `NoParameterBlock` instead of panicking) and `story_188::test_BC_2_21_008_bounds_failing_ack_data_records_no_ack_error_observation` (bounds-failing Ack_Data records no Ack error observation)
+- `tests/s7comm_analyzer_tests.rs` `mod story_188` (STORY-188 cross-reference, Postcondition 3 recording-gating clause; BC-2.21.009 not in STORY-188's bcs) — `story_188::vp051_kani::verify_classify_job_ack_function_param_slicing_safe` (Kani harness, bounded to a <=32-byte symbolic buffer: the classifier's parameter-block slicing never panics and returns `NoParameterBlock` iff `param_length == 0`, **on any input that passes `s7comm_bounds_ok`** — the harness returns early unless `parse_s7comm_header` is `Some` and `s7comm_bounds_ok` holds, so unchecked-input safety is NOT proven by it; that safety comes from the `data.get(header_len..end)` / `checked_add` guards in `classify_job_ack_function` (`src/analyzer/s7comm.rs` ~:396), which yield `NoParameterBlock` instead of panicking; that guard path is verified by the unit test `story_188::test_BC_2_21_017_unsliceable_parameter_block_returns_no_parameter_block`) and `story_188::test_BC_2_21_008_bounds_failing_ack_data_records_no_ack_error_observation` (bounds-failing Ack_Data records no Ack error observation)
 
 ## Story Anchor
 

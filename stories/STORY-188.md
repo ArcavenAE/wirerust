@@ -4,7 +4,7 @@ level: ops
 story_id: STORY-188
 title: "S7comm Job/Ack_Data Function-Code Classification: Setup Comm, Read/Write Var, Download/Upload Triads, PLC Control, PLC Stop"
 epic_id: E-23
-version: "1.6"
+version: "1.7"
 status: ready
 producer: story-writer
 timestamp: 2026-09-24T00:00:00Z
@@ -39,7 +39,7 @@ inputs:
   - docs/adr/0014-s7comm-iso-on-tcp-stream-dispatch-and-parser-design.md
   - .factory/research/s7comm-mitre-ics-tagging.md
   - .factory/research/s7comm-canonical-fc-vectors.md
-input-hash: "2191d38"
+input-hash: "ba2851e"
 ---
 
 > **tdd_mode:** `strict` — full TDD Iron Law enforced.
@@ -171,8 +171,12 @@ the Ack/Ack_Data error-observation record (AC-188-010).
   to BC-2.21.015 postcondition 3)
 - Bare `FC == 0x28` classification alone is never sufficient for downstream technique
   tagging without the service-string decode (traces to BC-2.21.015 postcondition 4)
-- **Test:** `test_BC_2_21_015_plc_control_service_string_decode` (one case per named
-  string, plus one for the unrecognized fallback)
+- **Tests:** `test_BC_2_21_015_plc_control_service_string_decode` (one case per named
+  string, plus one for the unrecognized fallback);
+  `test_BC_2_21_015_plc_control_truncated_and_case_variants_unrecognized` (truncated /
+  case-variant / prefix / lying-length strings -> `Unrecognized`, postcondition 3);
+  `test_BC_2_21_015_plc_control_trailing_bytes_after_service_string` (`"P_PROGRAM"` plus
+  trailing undecoded bytes still `ProgramStart`, story EC-004)
 
 ### AC-188-007: FC 0x29 classified as PLC Stop by FC byte only (length-prefixed service name not decoded)
 (traces to BC-2.21.016 postcondition 1)
@@ -222,8 +226,10 @@ the Ack/Ack_Data error-observation record (AC-188-010).
 - When the function-code classifier runs
 - Then exactly one of BC-2.21.010 through BC-2.21.017's outcomes applies — no value is
   unhandled, no value maps to more than one outcome
-- **Test:** `proptest_vp052_fc_classification_totality` (skeleton in this story, full run
-  in STORY-194)
+- **Tests:** `proptest_vp052_fc_classification_totality` (skeleton in this story, full run
+  in STORY-194); `test_BC_2_21_017_fc_classification_total_over_all_256_values` (the
+  deterministic 256-value companion: every `u8` FC value classified exactly once, no proptest
+  sampling gap)
 
 ### AC-188-010: Ack- and Ack_Data-ROSCTR error_class/error_code are consumed into a bounded analyzer-side record and an exact count map
 (traces to BC-2.21.008 postcondition 4)
@@ -541,6 +547,7 @@ Extracted from `docs/adr/0014-s7comm-iso-on-tcp-stream-dispatch-and-parser-desig
 
 | Version | Date | Author | Change |
 |---------|------|--------|--------|
+| 1.7 | 2026-10-05 | story-writer | STORY-188 per-story adversarial PASS-5 remediation (P5-F-02 NIT, DF-AC-TEST-NAME-SYNC-001). AC-188-009 Test line now also cites `test_BC_2_21_017_fc_classification_total_over_all_256_values` (deterministic 256-value companion to the VP-052 proptest skeleton). Sweep of AC-188-001..011 vs `mod story_188` docstrings also found AC-188-006 Test line omitting `test_BC_2_21_015_plc_control_truncated_and_case_variants_unrecognized` and `test_BC_2_21_015_plc_control_trailing_bytes_after_service_string`; both added. Propagation — BC-2.21.009 v1.12 and BC-2.21.017 v1.5 are anchor-only updates with no story-body impact. Test counts and points unchanged (8). |
 | 1.6 | 2026-10-05 | story-writer | STORY-188 per-story adversarial PASS-4 remediation (P4-F-01 MINOR plus propagation of BC-2.21.008 v1.12 and BC-2.21.017 v1.4). P4-F-01 — EC-012 no longer claims the VP-051 Kani harness covers the unsliceable-block `NoParameterBlock` path (the harness returns early unless `s7comm_bounds_ok`); it is now covered by unit test `test_BC_2_21_017_unsliceable_parameter_block_returns_no_parameter_block`, which is also cited in AC-188-008's defensive bullet. Propagation — BC-2.21.008 v1.12 swapped EC-007/EC-008 test citations; this story's EC-007/EC-008 rows cite no tests, so no row change was needed. Test counts unchanged (the new test is a BC-2.21.017 unit test covered by the existing `test_BC_2_21_017_*` wildcard; BC-2.21.008 stays at eleven). Points unchanged (8). |
 | 1.5 | 2026-10-05 | story-writer | STORY-188 per-story adversarial PASS-3 remediation (P3-F-07 plus propagation of BC amendments BC-2.21.008 v1.11, BC-2.21.009 v1.10, BC-2.21.010..017 v1.3). P3-F-07 (NIT) — AC-188-011 now notes the Setup Communication Ack_Data vector is cited in BC-2.21.008 Canonical Test Vectors (not in the research doc, which holds Write Var, PLC Control, PLC Stop, Read Var only). Propagation — AC-188-007 retitled/reworded: PLC Stop carries a length-prefixed service name (`"P_PROGRAM"`) in a different layout, deliberately not decoded (BC-2.21.016 v1.3); AC-188-011 PLC Stop bullet aligned; AC-188-004/005 and the VP-054 section name VP-054 as the anchored Download/Upload disjointness property (BC-013/014 now name it) and state disjointness is behavioral, arm separation by inspection; VP-051 section scope reworded to inputs passing `s7comm_bounds_ok` (unchecked-input safety from `data.get`/`checked_add` guards); VP-052 section notes skeleton + full run deferred to STORY-194; AC-188-008 gains the BC-2.21.017 EC-005 defensive `NoParameterBlock` bullet and new EC-012. Points unchanged (8). |
 | 1.4 | 2026-10-04 | story-writer | STORY-188 per-story adversarial PASS-2 remediation (P2-F-03, P2-F-05, P2-F-06, P2-F-09; propagation of BC v1.2/v1.9 amendments incl. P2-F-01, P2-F-02, P2-F-08). P2-F-06 — body BC table titles for BC-2.21.010..017 now verbatim BC H1 titles (BC-2.21.008 row verified unchanged). P2-F-03 — `test_BC_2_21_012_write_var_area_code_exhaustive_over_all_u8` relabeled "(proptest, BC-2.21.012 Invariant 1; no VP)" (VP-052 is FC/Userdata-group totality only). P2-F-09 — Purity Classification note corrected: the classification call site is new in `dispatch_classic_s7comm`, not unchanged from STORY-187. P2-F-05 — `test_BC_2_21_008_userdata_frames_record_no_ack_error_observation` added to AC-188-010 Tests (now eleven; Job/Userdata never-recorded clause), Tasks and File Structure counts updated. P2-F-01 — AC-188-007 gains BC-2.21.016 EC-001 (`param_length == 1` FC-only -> `PlcStop`; `param_length == 0` -> `NoParameterBlock`). P2-F-02 — AC-188-008 `param_length == 0` example is a bare Ack_Data (NOT Setup Communication, canonical `param_length` 8). P2-F-08 — BC-2.21.013 "adjacent in FC-space" wording confirmed in AC-188-005. Points unchanged (8). |
