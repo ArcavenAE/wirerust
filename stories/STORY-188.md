@@ -4,7 +4,7 @@ level: ops
 story_id: STORY-188
 title: "S7comm Job/Ack_Data Function-Code Classification: Setup Comm, Read/Write Var, Download/Upload Triads, PLC Control, PLC Stop"
 epic_id: E-23
-version: "1.3"
+version: "1.4"
 status: ready
 producer: story-writer
 timestamp: 2026-09-24T00:00:00Z
@@ -39,7 +39,7 @@ inputs:
   - docs/adr/0014-s7comm-iso-on-tcp-stream-dispatch-and-parser-design.md
   - .factory/research/s7comm-mitre-ics-tagging.md
   - .factory/research/s7comm-canonical-fc-vectors.md
-input-hash: "2680f3c"
+input-hash: "9c3734a"
 ---
 
 > **tdd_mode:** `strict` — full TDD Iron Law enforced.
@@ -69,14 +69,14 @@ the Ack/Ack_Data error-observation record (AC-188-010).
 | BC ID | Title | Story Role |
 |-------|-------|-----------|
 | BC-2.21.008 | `parse_s7comm_header` for ROSCTR=Ack (0x02) and Ack_Data (0x03) Requires 12 Bytes (Error Class + Error Code) | Postcondition 4 only (consumption of `error_class`/`error_code` as a bounded analyzer-side record + exact count map, for BOTH Ack and Ack_Data; bounds-gated per EC-009) — re-anchored here from STORY-187 per F-13 ruling, 2026-09-24, rescoped to explicitly include Ack_Data per the canonical-frame holdout ruling (DF-CANONICAL-FRAME-HOLDOUT-001, 2026-09-24); parse/extraction (Postconditions 1-3) remains STORY-187's scope |
-| BC-2.21.010 | Setup Communication (FC 0xF0) Classified | Session negotiation |
-| BC-2.21.011 | Read Var (FC 0x04) Classified | No area-code decode (read-only, no seeded technique) |
-| BC-2.21.012 | Write Var (FC 0x05) Classified With Area-Code Extraction | Primary write indicator |
-| BC-2.21.013 | Program-Download Triad Classified (0x1A/0x1B/0x1C) | Per-frame classification only; session correlation is STORY-191 |
-| BC-2.21.014 | Upload Triad Classified (0x1D/0x1E/0x1F), Distinguished From Download | Negative-evidence guarantee |
-| BC-2.21.015 | PLC Control (FC 0x28) Classified With PI-Service String Decode | Multiplexed function; 5 named services |
-| BC-2.21.016 | PLC Stop (FC 0x29) Classified | Dedicated, unambiguous STOP |
-| BC-2.21.017 | Unrecognized FC / Empty Parameter Block — Totality Anchor | Terminal fallback arm |
+| BC-2.21.010 | Job/Ack_Data Function-Code Byte Classifies Setup Communication (FC 0xF0) | Session negotiation |
+| BC-2.21.011 | Job/Ack_Data Function-Code Byte Classifies Read Var (FC 0x04) | No area-code decode (read-only, no seeded technique) |
+| BC-2.21.012 | Job/Ack_Data Function-Code Byte Classifies Write Var (FC 0x05) With Area-Code Extraction | Primary write indicator |
+| BC-2.21.013 | Program-Download Sequence Classified — Request Download (0x1A), Download Block (0x1B), Download Ended (0x1C) | Per-frame classification only; session correlation is STORY-191 |
+| BC-2.21.014 | Upload Sequence Classified — Start Upload (0x1D), Upload (0x1E), End Upload (0x1F) — Distinguished From Program Download | Negative-evidence guarantee |
+| BC-2.21.015 | PLC Control (FC 0x28) Classified With PI-Service String Decode — `P_PROGRAM`/`_INSE`/`_DELE`/`_GARB`/`_MODU` | Multiplexed function; 5 named services |
+| BC-2.21.016 | PLC Stop (FC 0x29) Classified — Dedicated STOP Request, No Service-String Ambiguity | Dedicated, unambiguous STOP |
+| BC-2.21.017 | Unrecognized Job/Ack_Data Function Code Classified `Unrecognized(fc)` — Totality of the FC Match; Empty-Parameter-Block Shared Treatment | Terminal fallback arm |
 
 ## Acceptance Criteria
 
@@ -122,7 +122,7 @@ the Ack/Ack_Data error-observation record (AC-188-010).
 - Multi-item parameter blocks are classified using only the first item's area code
   (traces to BC-2.21.012 postcondition 4)
 - **Test:** `test_BC_2_21_012_write_var_area_code_extraction`,
-  `test_BC_2_21_012_write_var_area_code_exhaustive_over_all_u8` (proptest, VP-052),
+  `test_BC_2_21_012_write_var_area_code_exhaustive_over_all_u8` (proptest, BC-2.21.012 Invariant 1; no VP),
   `test_BC_2_21_012_write_var_descriptor_length_boundary_11_12_13_14` (descriptor-length
   boundary: param blocks of 11/12/13/14 bytes)
 
@@ -174,6 +174,9 @@ the Ack/Ack_Data error-observation record (AC-188-010).
 - When the function-code classifier runs
 - Then the frame is classified `S7ClassicFunction::PlcStop`; no sub-operation decode is
   required or attempted (traces to BC-2.21.016 postcondition 2)
+- `param_length == 1` (FC byte only, bare `[0x29]`) is still `PlcStop`; `param_length == 0`
+  is NOT this case — no FC byte is present, so it is `NoParameterBlock` (traces to
+  BC-2.21.016 Edge Case EC-001; BC-2.21.017 postcondition 2)
 - PLC Stop's wire layout differs from PLC Control (`0x28`): 5 reserved bytes after the FC
   byte, NO `0xFD` marker and NO `u16` block-argument length; classification is by the FC
   byte ONLY, and the BC-2.21.015 service-string decode is never applied to `0x29`
@@ -187,7 +190,9 @@ the Ack/Ack_Data error-observation record (AC-188-010).
 - When the function-code classifier runs
 - Then the frame is classified `S7ClassicFunction::Unrecognized(fc)`, preserving the raw
   byte value (traces to BC-2.21.017 postcondition 1)
-- Given `param_length == 0`
+- Given `param_length == 0` (e.g. a bare Ack_Data with an empty parameter block such as
+  STORY-187's `minimal_ack_data_pdu`; NOT a Setup Communication Ack_Data, whose canonical
+  frame has `param_length` 8 and classifies as `SetupCommunication`)
 - Then the frame is classified `S7ClassicFunction::NoParameterBlock` — a distinct
   variant from `Unrecognized`, since "no FC byte present" and "FC byte present but
   unknown" are semantically different (traces to BC-2.21.017 postcondition 2)
@@ -258,6 +263,7 @@ observation). Surface: `S7commAnalyzer::ack_error_observations()` (list of
   `test_BC_2_21_008_ack_data_error_class_code_consumed_and_logged`,
   `test_BC_2_21_008_zero_error_class_code_logged_for_ack_and_ack_data`,
   `test_BC_2_21_008_job_frames_record_no_ack_error_observation`,
+  `test_BC_2_21_008_userdata_frames_record_no_ack_error_observation`,
   `test_BC_2_21_008_job_frames_contribute_no_histogram_key`,
   `test_BC_2_21_008_ack_error_observations_bounded_by_cap_with_dropped_count`,
   `test_BC_2_21_008_ack_error_counts_exact_for_mixed_frames`,
@@ -404,7 +410,7 @@ STORY-194.
 - [ ] Write `proptest_vp052_fc_classification_totality` and
       `proptest_vp054_download_upload_structural_disjointness` skeletons
 - [ ] Write unit tests: one per AC (AC-188-001..011), named `test_BC_2_21_010_*` ..
-      `test_BC_2_21_017_*`, plus the ten `test_BC_2_21_008_*` tests listed under
+      `test_BC_2_21_017_*`, plus the eleven `test_BC_2_21_008_*` tests listed under
       AC-188-010, plus `test_BC_2_21_012_write_var_descriptor_length_boundary_11_12_13_14`
 - [ ] Extend `tests/fixtures/mk_s7comm_pcap.py` with builders (`read_var_job`,
       `write_var_job`, `simple_fc_job`, `plc_control_job`, `ack_with_error`,
@@ -427,7 +433,7 @@ STORY-194.
 | EC-003 | BC-2.21.014 | `0x1A..=0x1F` implemented as a single collapsed range (regression scenario) | MUST NOT occur — `proptest_vp054` regression-guards this explicitly |
 | EC-004 | BC-2.21.015 | PI-service parameter block contains `"P_PROGRAM"` followed by additional undecoded trailing bytes | Classified `PlcControl(ProgramStart)`; trailing-byte sub-operation decode (restart disambiguation) is out of this story's scope, handled later per its own dedicated contract |
 | EC-005 | BC-2.21.015 | Service-string field truncated (insufficient parameter-block bytes) | `PlcControl(Unrecognized)` — never a hard reject |
-| EC-006 | BC-2.21.017 | `data[header_len] == 0x00` with `param_length == 1` | `Unrecognized(0x00)` |
+| EC-006 | BC-2.21.017 EC-001 | `data[header_len] == 0x00` with `param_length == 1` | `Unrecognized(0x00)` |
 | EC-007 | BC-2.21.008 EC-004 (F-13 re-anchor) | Ack- or Ack_Data-ROSCTR header with `error_class == 0x00` and `error_code` zero-equivalent (no error reported) | Recorded (list + count map) the same as any other value, for either ROSCTR — a zero is a normal successful-Ack(_Data) value, not itself flagged or suppressed |
 | EC-008 | BC-2.21.008 EC-007/EC-008 (canonical-frame holdout ruling, 2026-09-24) | Ack_Data header with a non-empty parameter block AND non-zero `error_class`/`error_code` (real-world Setup Communication response shape) | The error fields are recorded AND the parameter block at `data[header_len] == data[12]` is classified by `classify_job_ack_function` independently — a populated error-class/code pair never suppresses FC classification |
 | EC-009 | BC-2.21.008 EC-009 (F-06 ruling 2026-10-04) | Ack/Ack_Data header parses `Some` (>= 12 bytes) but declared `header_len + param_length + data_length` exceeds the available bytes (BC-2.21.009 bounds check FAILS) | T0814 malformed-header finding emitted; NO error observation recorded (neither list nor count map); no FC classification attempted. Test: `test_BC_2_21_008_bounds_failing_ack_data_records_no_ack_error_observation` |
@@ -469,7 +475,7 @@ Extracted from `docs/adr/0014-s7comm-iso-on-tcp-stream-dispatch-and-parser-desig
   undeterminable area code, or an unrecognized PI-service string all have honest
   "unrecognized" fallback variants rather than being coerced into a named outcome.
 - Pure/effectful boundary: `classify_job_ack_function` is pure; the `on_data` call site
-  that invokes it is the effectful shell (unchanged from STORY-187).
+  that invokes it is the effectful shell (the classification call site is new in this story, added in `dispatch_classic_s7comm`).
 - **BC-2.21.008 Postcondition 4 re-anchor (F-13 ruling, human-ratified 2026-09-24;
   rescoped 2026-09-24 to explicitly include Ack_Data per the canonical-frame holdout
   ruling, DF-CANONICAL-FRAME-HOLDOUT-001)**: this story owns the consumption (record) of
@@ -495,7 +501,7 @@ Extracted from `docs/adr/0014-s7comm-iso-on-tcp-stream-dispatch-and-parser-desig
 | File | Action | Purpose |
 |------|--------|---------|
 | `src/analyzer/s7comm.rs` | MODIFY | Add `S7ClassicFunction`, `S7AreaCode`, `PlcControlService`, `classify_job_ack_function`; add `S7AckErrorKey`/`S7AckErrorObservation`/`MAX_S7_ACK_ERROR_OBSERVATIONS`; call the classifier (classification-only placeholder) from `dispatch_classic_s7comm`; add Ack AND Ack_Data `error_class`/`error_code` bounded record + count map + accessors (BC-2.21.008 Postcondition 4, AC-188-010) |
-| `tests/s7comm_analyzer_tests.rs` | MODIFY | Add `mod story_188`: BC-2.21.008 (AC-188-010, ten tests) + BC-2.21.010-017 unit tests + `canonical` byte-vector tests (AC-188-011) + `area_exhaustive`/`vp052`/`vp054` proptests + `vp051_kani` harness |
+| `tests/s7comm_analyzer_tests.rs` | MODIFY | Add `mod story_188`: BC-2.21.008 (AC-188-010, eleven tests) + BC-2.21.010-017 unit tests + `canonical` byte-vector tests (AC-188-011) + `area_exhaustive`/`vp052`/`vp054` proptests + `vp051_kani` harness |
 | `tests/fixtures/mk_s7comm_pcap.py` | MODIFY | Add builders for Read/Write Var, Download/Upload triad, PLC Control, PLC Stop, Ack and Ack_Data-with-error frames; `build_fc_classification_pcap` |
 | `tests/fixtures/s7comm-fc-classification.pcap` | CREATE | Synthetic fixture covering every STORY-188 function code (generated by `mk_s7comm_pcap.py`) |
 
@@ -510,6 +516,7 @@ Extracted from `docs/adr/0014-s7comm-iso-on-tcp-stream-dispatch-and-parser-desig
 
 | Version | Date | Author | Change |
 |---------|------|--------|--------|
+| 1.4 | 2026-10-04 | story-writer | STORY-188 per-story adversarial PASS-2 remediation (P2-F-03, P2-F-05, P2-F-06, P2-F-09; propagation of BC v1.2/v1.9 amendments incl. P2-F-01, P2-F-02, P2-F-08). P2-F-06 — body BC table titles for BC-2.21.010..017 now verbatim BC H1 titles (BC-2.21.008 row verified unchanged). P2-F-03 — `test_BC_2_21_012_write_var_area_code_exhaustive_over_all_u8` relabeled "(proptest, BC-2.21.012 Invariant 1; no VP)" (VP-052 is FC/Userdata-group totality only). P2-F-09 — Purity Classification note corrected: the classification call site is new in `dispatch_classic_s7comm`, not unchanged from STORY-187. P2-F-05 — `test_BC_2_21_008_userdata_frames_record_no_ack_error_observation` added to AC-188-010 Tests (now eleven; Job/Userdata never-recorded clause), Tasks and File Structure counts updated. P2-F-01 — AC-188-007 gains BC-2.21.016 EC-001 (`param_length == 1` FC-only -> `PlcStop`; `param_length == 0` -> `NoParameterBlock`). P2-F-02 — AC-188-008 `param_length == 0` example is a bare Ack_Data (NOT Setup Communication, canonical `param_length` 8). P2-F-08 — BC-2.21.013 "adjacent in FC-space" wording confirmed in AC-188-005. Points unchanged (8). |
 | 1.3 | 2026-10-04 | story-writer | STORY-188 per-story adversarial PASS-1 remediation (F-01, F-02, F-03, F-05, F-06, F-07, F-09), human rulings 2026-10-04 recorded: (1) AC-188-010 surface = analyzer-side bounded record, NO stderr/log output (ADR-0004 flooding rationale); (2) added exact per-`(rosctr, error_class, error_code)` count map and `pdu_reference` on each observation. Changes: F-05/F-06 — AC-188-010 rewritten (removed "logged/surfaced via structured logging or diagnostic surface"; now bounded list cap 1024 + saturating dropped count + count map beyond cap + `pdu_reference`; bounds-gated per EC-009; ten tests listed); EC-009/EC-010 added. F-01 (DF-CANONICAL-FRAME-HOLDOUT-001) — new AC-188-011 citing the six `story_188::canonical::*` tests and `.factory/research/s7comm-canonical-fc-vectors.md`, public bytes as test vectors only (ADR-014 Decision 4). F-02/F-09 — AC-188-003 gains the descriptor-length rule (>=14 bytes, syntax id 0x10 at offset 4, area at offset 10) + boundary test `test_BC_2_21_012_write_var_descriptor_length_boundary_11_12_13_14` + accepted 0xFF collision (orchestrator decision: accepted residual); EC-011 added. AC-188-007 notes PLC Stop wire layout differs, FC-only classification (BC-2.21.016 PC3). F-03 — Task "Wire classify_job_ack_function into on_data" rewritten as a deliberate classification-only placeholder consumed by STORY-191/192 (no observable wiring claimed); Narrative, Architecture Mapping, Purity Classification updated. F-07 — Architecture Mapping/Purity rows (record + count map + `S7AckErrorKey`/`S7AckErrorObservation`), File Structure (new fixture `tests/fixtures/s7comm-fc-classification.pcap`, `mk_s7comm_pcap.py` builders), Tasks, Edge Cases, Token Budget (~33,500, ~17%; BC count unchanged at 9). VP-051 added to `verification_properties` with a VP-051 Kani Harness Obligation section: `story_188::vp051_kani::verify_classify_job_ack_function_param_slicing_safe` (VP-INDEX v2.55, closes PRF-005); `s7comm-canonical-fc-vectors.md` added to `inputs`. Points unchanged (8). |
 | 1.2 | 2026-09-24 | story-writer | Synced this story to the STORY-187 canonical-frame holdout human ruling (DF-CANONICAL-FRAME-HOLDOUT-001, 2026-09-24): BC-2.21.008's Postcondition 4 consumption/logging obligation (already re-anchored to this story in v1.1) is now rescoped to explicitly cover BOTH ROSCTR `0x02` (Ack) and `0x03` (Ack_Data) — Ack_Data was previously (incorrectly, per v1.0/v1.1) assumed to carry no error fields of its own, but the amended BC-2.21.008 v1.2 shows Ack_Data also carries `error_class`/`error_code` at `data[10..12]` with `header_len == 12`, and its parameter block (still classified normally by `classify_job_ack_function`) begins at `data[12]`, not `data[10]`. Changes: (1) the Behavioral Contracts table's BC-2.21.008 title row updated verbatim to the current BC H1 ("...for ROSCTR=Ack (0x02) and Ack_Data (0x03)..."); (2) AC-188-010 extended with a parallel Ack_Data given/when/then and a note that the error-logging and FC-classification obligations for Ack_Data fire independently of each other; (3) a new test named `test_BC_2_21_008_ack_data_error_class_code_consumed_and_logged`; (4) Tasks, Architecture Mapping/Purity Classification note, Architecture Compliance Rules, File Structure Requirements, and the fixture-generator task updated to mention Ack_Data alongside Ack; (5) new Edge Case EC-008 (Ack_Data with a populated parameter block AND non-zero error fields — both obligations fire); EC-007 generalized to "Ack- or Ack_Data-ROSCTR" wording. Verified: no fixture, worked example, or AC in this story hardcodes an Ack_Data parameter-block offset of `data[10]` — the classifier signature (`classify_job_ack_function(data, header_len, param_length)`) and every AC already parametrize on `data[header_len]` generically, so no other change was required for the offset correction itself. Points unchanged (a second small logging AC on an already-generic classifier, not judged large enough to require a bump). |
 | 1.1 | 2026-09-24 | story-writer | Propagated F-13 human ruling (STORY-187 per-story adversarial pass 1, human-ratified 2026-09-24; BC-2.21.008 v1.1 Postcondition 4 and Traceability/Story Anchor sections) into this story: BC-2.21.008 added to `behavioral_contracts`/`inputs` frontmatter and the body Behavioral Contracts table (Postcondition 4 only — parse/extraction, Postconditions 1-3, remains STORY-187's scope). New AC-188-010 (traces to BC-2.21.008 postcondition 4): `S7commAnalyzer::on_data` consumes/logs the already-parsed Ack-ROSCTR `error_class`/`error_code` values; a zero error class/code is logged the same as any other value (BC-2.21.008 EC-004). Added Architecture Mapping/Purity Classification rows for the Ack-consumption effectful-shell behavior, a Tasks entry, a named unit test (`test_BC_2_21_008_ack_error_class_code_consumed_and_logged`), Edge Case EC-007, a Token Budget BC-count update (8->9 BCs), an Architecture Compliance Rules note on the re-anchor, and a File Structure Requirements update. Points unchanged pending story-writer's points-change recommendation (see handback report) — the added scope is a single small logging AC, not judged large enough on its own to require a bump, but should be considered alongside STORY-187's larger F-01/F-02/F-12 scope growth when wave/points are next reviewed. |

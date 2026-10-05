@@ -3,37 +3,199 @@
   "story": "STORY-188",
   "cycle": "feature-s7comm",
   "criterion": "BC-5.39.001",
-  "passes_total": 1,
+  "passes_total": 2,
   "passes_clean": [],
   "closing_trio": [],
   "last_classification": "HAS_FINDINGS",
   "verdict": "IN_PROGRESS",
   "human_rulings": [
-    {"id": "R1", "date": "2026-10-04", "summary": "AC-188-010 / BC-2.21.008 PC4 surface is an analyzer-side bounded record (S7AckErrorObservation list, cap MAX_S7_ACK_ERROR_OBSERVATIONS=1024, saturating dropped count), NOT stderr (ADR-0004 flooding rationale)"},
-    {"id": "R2", "date": "2026-10-04", "summary": "Per adversary F-07: add exact per-(rosctr,error_class,error_code) count map (S7AckErrorKey, <=131,072 keys) plus pdu_reference on each observation"}
+    {
+      "id": "R1",
+      "date": "2026-10-04",
+      "summary": "AC-188-010 / BC-2.21.008 PC4 surface is an analyzer-side bounded record (S7AckErrorObservation list, cap MAX_S7_ACK_ERROR_OBSERVATIONS=1024, saturating dropped count), NOT stderr (ADR-0004 flooding rationale)"
+    },
+    {
+      "id": "R2",
+      "date": "2026-10-04",
+      "summary": "Per adversary F-07: add exact per-(rosctr,error_class,error_code) count map (S7AckErrorKey, <=131,072 keys) plus pdu_reference on each observation"
+    }
   ],
   "orchestrator_decisions": [
-    {"id": "F-03", "summary": "FC classification result kept as documented classification-only placeholder consumed by STORY-191/192"},
-    {"id": "F-06", "summary": "Ack/Ack_Data recording gated on BC-2.21.009 bounds pass (consistent with treated identically to malformed header)"},
-    {"id": "F-09", "summary": "Unrecognized(0xFF) shared placeholder accepted as residual (NIT)"}
+    {
+      "id": "F-03",
+      "summary": "FC classification result kept as documented classification-only placeholder consumed by STORY-191/192"
+    },
+    {
+      "id": "F-06",
+      "summary": "Ack/Ack_Data recording gated on BC-2.21.009 bounds pass (consistent with treated identically to malformed header)"
+    },
+    {
+      "id": "F-09",
+      "summary": "Unrecognized(0xFF) shared placeholder accepted as residual (NIT)"
+    },
+    {
+      "id": "P2-F-10",
+      "summary": "BC-2.21.009 traceability: cross-reference only; BC-2.21.009 NOT added to STORY-188 bcs"
+    }
   ],
   "findings": {
     "pass_1": {
       "classification": "HAS_FINDINGS",
       "context": "fresh context, Phase A attestation valid",
-      "counts": {"MAJOR": 1, "MINOR": 7, "NIT": 3},
+      "counts": {
+        "MAJOR": 1,
+        "MINOR": 7,
+        "NIT": 3
+      },
       "items": [
-        {"id": "F-01", "severity": "MAJOR", "summary": "no canonical-frame tests (DF-CANONICAL-FRAME-HOLDOUT-001)", "disposition": "fixed", "note": "canonical vectors in research/s7comm-canonical-fc-vectors.md; PLC Stop 0x29 layout differs from PLC Control 0x28; AC-188-011 added; test-name defect test_BC_2_21_014_canonical_plc_stop_classified renamed to test_BC_2_21_016_..."},
-        {"id": "F-02", "severity": "MINOR", "summary": "Write Var length boundary unpinned", "disposition": "fixed"},
-        {"id": "F-03", "severity": "MINOR", "summary": "classification result discarded", "disposition": "resolved-by-decision", "note": "documented classification-only placeholder consumed by STORY-191/192"},
-        {"id": "F-04", "severity": "MINOR", "summary": "stale stderr test comment", "disposition": "fixed"},
-        {"id": "F-05", "severity": "MINOR", "summary": "stale story/BC text; BCs not re-anchored", "disposition": "fixed", "note": "BC-2.21.008 v1.10, BC-2.21.009 v1.8, BC-2.21.010..017 v1.1, STORY-188 v1.3"},
-        {"id": "F-06", "severity": "MINOR", "summary": "bounds-gated recording unspecified", "disposition": "fixed", "note": "gated on BC-2.21.009 bounds pass"},
-        {"id": "F-07", "severity": "MINOR", "summary": "first-N record loses later errors", "disposition": "fixed", "note": "human ruling R2: exact count map + pdu_reference"},
-        {"id": "F-08", "severity": "MINOR", "summary": "Kani harness mislabeled VP-052", "disposition": "fixed", "note": "relabeled VP-051 third harness (VP-INDEX v2.55)"},
-        {"id": "F-09", "severity": "NIT", "summary": "Unrecognized(0xFF) shared placeholder", "disposition": "accepted-residual"},
-        {"id": "F-10", "severity": "NIT", "summary": "VP-054 'eight' should be 'six'", "disposition": "fixed"},
-        {"id": "F-11", "severity": "NIT", "summary": "doc nits", "disposition": "fixed"}
+        {
+          "id": "F-01",
+          "severity": "MAJOR",
+          "summary": "no canonical-frame tests (DF-CANONICAL-FRAME-HOLDOUT-001)",
+          "disposition": "fixed",
+          "note": "canonical vectors in research/s7comm-canonical-fc-vectors.md; PLC Stop 0x29 layout differs from PLC Control 0x28; AC-188-011 added; test-name defect test_BC_2_21_014_canonical_plc_stop_classified renamed to test_BC_2_21_016_..."
+        },
+        {
+          "id": "F-02",
+          "severity": "MINOR",
+          "summary": "Write Var length boundary unpinned",
+          "disposition": "fixed"
+        },
+        {
+          "id": "F-03",
+          "severity": "MINOR",
+          "summary": "classification result discarded",
+          "disposition": "resolved-by-decision",
+          "note": "documented classification-only placeholder consumed by STORY-191/192"
+        },
+        {
+          "id": "F-04",
+          "severity": "MINOR",
+          "summary": "stale stderr test comment",
+          "disposition": "fixed"
+        },
+        {
+          "id": "F-05",
+          "severity": "MINOR",
+          "summary": "stale story/BC text; BCs not re-anchored",
+          "disposition": "fixed",
+          "note": "BC-2.21.008 v1.10, BC-2.21.009 v1.8, BC-2.21.010..017 v1.1, STORY-188 v1.3"
+        },
+        {
+          "id": "F-06",
+          "severity": "MINOR",
+          "summary": "bounds-gated recording unspecified",
+          "disposition": "fixed",
+          "note": "gated on BC-2.21.009 bounds pass"
+        },
+        {
+          "id": "F-07",
+          "severity": "MINOR",
+          "summary": "first-N record loses later errors",
+          "disposition": "fixed",
+          "note": "human ruling R2: exact count map + pdu_reference"
+        },
+        {
+          "id": "F-08",
+          "severity": "MINOR",
+          "summary": "Kani harness mislabeled VP-052",
+          "disposition": "fixed",
+          "note": "relabeled VP-051 third harness (VP-INDEX v2.55)"
+        },
+        {
+          "id": "F-09",
+          "severity": "NIT",
+          "summary": "Unrecognized(0xFF) shared placeholder",
+          "disposition": "accepted-residual"
+        },
+        {
+          "id": "F-10",
+          "severity": "NIT",
+          "summary": "VP-054 'eight' should be 'six'",
+          "disposition": "fixed"
+        },
+        {
+          "id": "F-11",
+          "severity": "NIT",
+          "summary": "doc nits",
+          "disposition": "fixed"
+        }
+      ]
+    },
+    "pass_2": {
+      "classification": "HAS_FINDINGS",
+      "context": "fresh context, Phase A attestation valid at branch 1835c5b4 / develop 17b00031",
+      "pass1_verification": "all 11 pass-1 findings VERIFIED-FIXED",
+      "counts": {
+        "MAJOR": 0,
+        "MINOR": 6,
+        "NIT": 4
+      },
+      "items": [
+        {
+          "id": "P2-F-01",
+          "severity": "MINOR",
+          "summary": "BC-2.21.016 EC-001 param_length==0 contradiction",
+          "disposition": "fixed"
+        },
+        {
+          "id": "P2-F-02",
+          "severity": "MINOR",
+          "summary": "BC-2.21.017 disproved Setup-Comm param_length==0 claim",
+          "disposition": "fixed"
+        },
+        {
+          "id": "P2-F-03",
+          "severity": "MINOR",
+          "summary": "VP-052 mis-anchors in story/test/src",
+          "disposition": "fixed"
+        },
+        {
+          "id": "P2-F-04",
+          "severity": "MINOR",
+          "summary": "stale VP-NNN + VP-INDEX v2.48 refs",
+          "disposition": "fixed"
+        },
+        {
+          "id": "P2-F-05",
+          "severity": "MINOR",
+          "summary": "Userdata non-recording untested (new test test_BC_2_21_008_userdata_frames_record_no_ack_error_observation)",
+          "disposition": "fixed"
+        },
+        {
+          "id": "P2-F-06",
+          "severity": "MINOR",
+          "summary": "story BC titles not verbatim",
+          "disposition": "fixed"
+        },
+        {
+          "id": "P2-F-07",
+          "severity": "NIT",
+          "summary": "arm anchors at fn signature",
+          "disposition": "fixed"
+        },
+        {
+          "id": "P2-F-08",
+          "severity": "NIT",
+          "summary": "BC-2.21.013 'eight-apart'",
+          "disposition": "fixed"
+        },
+        {
+          "id": "P2-F-09",
+          "severity": "NIT",
+          "summary": "stale prose",
+          "disposition": "fixed"
+        },
+        {
+          "id": "P2-F-10",
+          "severity": "NIT",
+          "summary": "BC-2.21.009 traceability omits STORY-188 (cross-reference only per orchestrator decision)",
+          "disposition": "resolved-by-decision"
+        }
+      ],
+      "remediation_commits": [
+        "7fcf3a5b",
+        "e24c6f7d"
       ]
     }
   },
@@ -46,13 +208,22 @@
     "covers": "4/4",
     "closes": "PRF-005 (carry-forward; RESOLVED in STORY-188 branch, pending merge)"
   },
-  "test_suite": {"full_suite": "2835 passed / 0 failed", "clippy_fmt_green_doc_tense": "clean"},
+  "test_suite": {
+    "full_suite": "2836 passed / 0 failed",
+    "clippy_fmt_green_doc_tense": "clean"
+  },
   "merge_status": "NOT_YET_MERGED",
   "branch": "feature/STORY-188-s7comm-function-code-classification",
   "worktree": ".worktrees/STORY-188",
-  "head": "1835c5b4",
+  "head": "e24c6f7d",
   "base": "develop 17b00031",
   "timestamp": "2026-10-04T00:00:00Z",
   "producer": "state-manager",
-  "note": "Pass 1 remediated; pass 2 (fresh context) is next. Supplement to the eventual convergence-report.md."
+  "note": "Pass 2 remediated; pass 3 (fresh context) is next. Supplement to the eventual convergence-report.md.",
+  "spec_versions": {
+    "BC-2.21.009": "v1.9",
+    "BC-2.21.010..017": "v1.2",
+    "BC-INDEX": "v2.38.20",
+    "STORY-188": "v1.4 (input-hash 9c3734a)"
+  }
 }

@@ -1,7 +1,7 @@
 ---
 document_type: behavioral-contract
 level: L3
-version: "1.1"
+version: "1.2"
 status: draft
 producer: product-owner
 timestamp: 2026-09-06T00:00:00Z
@@ -14,6 +14,9 @@ capability: CAP-21
 lifecycle_status: active
 introduced: feature-s7comm
 modified:
+  - version: "1.2"
+    date: 2026-10-04
+    change: "STORY-188 pass-2 P2-F-07 (NIT): arm anchor re-cited from :385 (fn signature) to the match-arm line :403; function itself stays :385."
   - version: "1.1"
     date: 2026-10-04
     change: "STORY-188 per-story adversarial pass 1 remediation (F-07): replaced every (planned) Architecture marker and the TBD Stories placeholder with concrete anchors verified against worktree HEAD f33b4337 and Stories: STORY-188; added verifying-test list. No behavioral change."
@@ -117,7 +120,7 @@ BC-2.21.017, the terminal `Unrecognized` fallback arm.)
 
 ## Architecture Anchors
 
-- `src/analyzer/s7comm.rs:385` — `classify_job_ack_function` (`src/analyzer/s7comm.rs:385`, `pub fn classify_job_ack_function(data, header_len, param_length) -> S7ClassicFunction`), `0xF0 => S7ClassicFunction::SetupCommunication` arm; called from `dispatch_classic_s7comm` (:1033) for `Rosctr::Job` (~1084) and `Rosctr::AckData` (~1091) after the BC-2.21.009 bounds check
+- `src/analyzer/s7comm.rs:403` — `classify_job_ack_function` (function at `src/analyzer/s7comm.rs:385`, `pub fn classify_job_ack_function(data, header_len, param_length) -> S7ClassicFunction`), `0xF0 => S7ClassicFunction::SetupCommunication` arm; called from `dispatch_classic_s7comm` (:1033) for `Rosctr::Job` (~1084) and `Rosctr::AckData` (~1091) after the BC-2.21.009 bounds check
 - `src/analyzer/s7comm.rs:339` — `pub enum S7ClassicFunction { SetupCommunication, ReadVar, WriteVar(S7AreaCode), RequestDownload, DownloadBlock, DownloadEnded, StartUpload, Upload, EndUpload, PlcControl(PlcControlService), PlcStop, Unrecognized(u8), NoParameterBlock }` (the classification surface part B2 maps MITRE techniques onto; `NoParameterBlock` added for BC-2.21.017)
 - `tests/s7comm_analyzer_tests.rs` `mod story_188` — verifying tests: `test_BC_2_21_010_setup_communication_classified`, `test_BC_2_21_010_fc_classification_fixture_pcap_end_to_end`, `story_188::canonical::test_BC_2_21_010_canonical_setup_communication_ack_data_classified` (canonical Setup Communication Ack_Data vector, cnblogs source per BC-2.21.008 Canonical Test Vectors), plus `story_188::vp052::proptest_vp052_fc_classification_totality` (VP-052)
 - `.factory/research/s7comm-mitre-ics-tagging.md` §S7comm wire-field basis — FC table source

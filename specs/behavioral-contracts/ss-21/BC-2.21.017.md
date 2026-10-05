@@ -1,7 +1,7 @@
 ---
 document_type: behavioral-contract
 level: L3
-version: "1.1"
+version: "1.2"
 status: draft
 producer: product-owner
 timestamp: 2026-09-06T00:00:00Z
@@ -14,6 +14,9 @@ capability: CAP-21
 lifecycle_status: active
 introduced: feature-s7comm
 modified:
+  - version: "1.2"
+    date: 2026-10-04
+    change: "STORY-188 pass-2 P2-F-07 (NIT): arm anchor re-cited from :385 (fn signature) to the match-arm line :417; function itself stays :385. P2-F-02 (MINOR): PC2/EC-003 Setup-Communication-Ack param_length==0 claim removed (disproved by canonical cnblogs Ack_Data, param_length 8); replaced with bare Ack_Data empty-parameter-block example. P2-F-04 (NIT): Verification Properties VP-NNN -> VP-052 (proptest P1); VP-INDEX version ref v2.48 -> v2.55."
   - version: "1.1"
     date: 2026-10-04
     change: "STORY-188 per-story adversarial pass 1 remediation (F-07): replaced every (planned) Architecture marker and the TBD Stories placeholder with concrete anchors verified against worktree HEAD f33b4337 and Stories: STORY-188; added verifying-test list. No behavioral change."
@@ -56,8 +59,11 @@ distinct condition from "FC byte present but unrecognized."
    future extension or B2 anomaly heuristic can inspect it without re-parsing.
 2. For case (b): the frame is classified `S7ClassicFunction::NoParameterBlock` (a
    distinct variant from `Unrecognized`, since "no FC byte present" and "FC byte
-   present but unknown" are semantically different conditions — a Setup Communication
-   Ack, for example, legitimately carries `param_length == 0`).
+   present but unknown" are semantically different conditions — e.g. a bare Ack_Data
+   (ROSCTR 0x03) with an empty parameter block, as in STORY-187's `minimal_ack_data_pdu`
+   test frame; a Setup Communication Ack_Data does NOT carry `param_length == 0` — the
+   canonical frame has `param_length` 8 and classifies as `SetupCommunication`,
+   BC-2.21.008/BC-2.21.010).
 3. No `Finding` is emitted for either case at the B1 dissection layer — an
    unrecognized-but-otherwise-well-formed FC byte is not itself a malformed-frame
    condition (distinguished from BC-2.21.004/007/008/009's bounds/ROSCTR/length
@@ -87,7 +93,7 @@ distinct condition from "FC byte present but unrecognized."
 |----|-------------|-------------------|
 | EC-001 | `data[header_len] == 0x00` | `Unrecognized(0x00)` |
 | EC-002 | `data[header_len] == 0x06` (a plausible but unassigned FC value adjacent to Read/Write Var) | `Unrecognized(0x06)` — no proximity-based guessing |
-| EC-003 | `param_length == 0` on an Ack_Data response to a Setup Communication request | `NoParameterBlock` — the expected, non-anomalous shape for this response type |
+| EC-003 | `param_length == 0` on a bare Ack_Data (ROSCTR 0x03) with an empty parameter block (e.g. STORY-187's `minimal_ack_data_pdu` test frame; NOT a Setup Communication Ack_Data, whose canonical frame has `param_length` 8 → `SetupCommunication`) | `NoParameterBlock` — non-anomalous for an Ack_Data carrying no parameters |
 | EC-004 | `data[header_len] == 0xFF` | `Unrecognized(0xFF)` |
 
 ## Canonical Test Vectors
@@ -102,7 +108,7 @@ distinct condition from "FC byte present but unrecognized."
 
 | Property | Proof Method |
 |----------|--------------|
-| The full Job/Ack_Data FC classification match (BC-2.21.010 through this BC) is total and non-overlapping over all 256 `u8` values plus the `param_length == 0` case | proptest P1 (mirrors VP-046's `classify_frame_format` totality treatment) — VP-NNN allocation deferred to the F2 INTEGRATE sub-burst |
+| The full Job/Ack_Data FC classification match (BC-2.21.010 through this BC) is total and non-overlapping over all 256 `u8` values plus the `param_length == 0` case | VP-052 (proptest P1) (mirrors VP-046's `classify_frame_format` totality treatment) |
 
 ## Traceability
 
@@ -124,7 +130,7 @@ distinct condition from "FC byte present but unrecognized."
 
 ## Architecture Anchors
 
-- `src/analyzer/s7comm.rs:385` — `other => S7ClassicFunction::Unrecognized(other)` terminal arm and the `param_length == 0` / unsliceable-block `NoParameterBlock` early returns of `classify_job_ack_function` (`src/analyzer/s7comm.rs:385`, `pub fn classify_job_ack_function(data, header_len, param_length) -> S7ClassicFunction`); variants at :339
+- `src/analyzer/s7comm.rs:417` — `other => S7ClassicFunction::Unrecognized(other)` terminal arm and the `param_length == 0` / unsliceable-block `NoParameterBlock` early returns of `classify_job_ack_function` (function at `src/analyzer/s7comm.rs:385`, `pub fn classify_job_ack_function(data, header_len, param_length) -> S7ClassicFunction`); variants at :339
 - `tests/s7comm_analyzer_tests.rs` `mod story_188` — verifying tests: `test_BC_2_21_017_unrecognized_fc_and_empty_parameter_block`, `test_BC_2_21_017_fc_classification_total_over_all_256_values`, `story_188::vp052::proptest_vp052_fc_classification_totality` (VP-052)
 
 ## Story Anchor
@@ -135,7 +141,7 @@ STORY-188 (also a formal-hardening re-verification anchor for STORY-194)
 
 - VP-052 (proptest P1) — S7comm Function-Code and Userdata-Group Classification
   Totality (Including the Load-Bearing 0x03/0x04/0x07 Group Correction); registered
-  F2 INTEGRATE sub-burst per VP-INDEX.md v2.48; traces BC-2.21.017, BC-2.21.019,
+  F2 INTEGRATE sub-burst per VP-INDEX.md v2.55; traces BC-2.21.017, BC-2.21.019,
   BC-2.21.022, BC-2.21.023
 
 ## Purity Classification

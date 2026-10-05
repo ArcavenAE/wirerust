@@ -1,7 +1,7 @@
 ---
 document_type: behavioral-contract
 level: L3
-version: "1.1"
+version: "1.2"
 status: draft
 producer: product-owner
 timestamp: 2026-09-06T00:00:00Z
@@ -14,6 +14,9 @@ capability: CAP-21
 lifecycle_status: active
 introduced: feature-s7comm
 modified:
+  - version: "1.2"
+    date: 2026-10-04
+    change: "STORY-188 pass-2 P2-F-07 (NIT): arm anchor re-cited from :385 (fn signature) to the match-arm line :416; function itself stays :385. P2-F-01 (MINOR): EC-001 reworded - FC-byte-only case is param_length == 1 (cites test_BC_2_21_016_plc_stop_classified); param_length == 0 is NoParameterBlock per BC-2.21.017 PC2 and code."
   - version: "1.1"
     date: 2026-10-04
     change: "STORY-188 per-story adversarial pass 1 remediation (F-07): replaced every (planned) Architecture marker and the TBD Stories placeholder with concrete anchors verified against worktree HEAD f33b4337 and Stories: STORY-188; added verifying-test list. Postcondition 3 added recording that PLC Stop wire layout differs from PLC Control (5 reserved bytes, no 0xFD, no u16 block-arg length) and classification is by FC only. Canonical-vector test cited under its corrected name (`test_BC_2_21_016_canonical_plc_stop_classified`, formerly mis-named for BC-2.21.014 — test-name defect fixed)."
@@ -63,7 +66,7 @@ one BC would understate the material difference in decode complexity ADR-014 fla
 
 | ID | Description | Expected Behavior |
 |----|-------------|-------------------|
-| EC-001 | `param_length == 0` following the FC byte (no additional parameters) | Still classified `PlcStop` — the FC byte alone is sufficient; an empty remainder is expected, not anomalous |
+| EC-001 | `param_length == 1` (the FC byte only; no bytes follow it in the parameter block) | Still classified `PlcStop` — the FC byte alone is sufficient; an empty remainder is expected, not anomalous (test: `test_BC_2_21_016_plc_stop_classified`, bare `[0x29]`). `param_length == 0` is NOT this case: no FC byte is present, so it is `NoParameterBlock` (BC-2.21.017 Postcondition 2) |
 
 ## Canonical Test Vectors
 
@@ -95,7 +98,7 @@ anchored to BC-2.21.017.)
 
 ## Architecture Anchors
 
-- `src/analyzer/s7comm.rs:385` — `0x29 => S7ClassicFunction::PlcStop` arm of `classify_job_ack_function` (`src/analyzer/s7comm.rs:385`, `pub fn classify_job_ack_function(data, header_len, param_length) -> S7ClassicFunction`); deliberately does NOT call `decode_plc_control_service` (:462) because the layouts differ; `PlcStop` variant at :339 carries no payload
+- `src/analyzer/s7comm.rs:416` — `0x29 => S7ClassicFunction::PlcStop` arm of `classify_job_ack_function` (function at `src/analyzer/s7comm.rs:385`, `pub fn classify_job_ack_function(data, header_len, param_length) -> S7ClassicFunction`); deliberately does NOT call `decode_plc_control_service` (:462) because the layouts differ; `PlcStop` variant at :339 carries no payload
 - `tests/s7comm_analyzer_tests.rs` `mod story_188` — verifying tests: `test_BC_2_21_016_plc_stop_classified`, `story_188::canonical::test_BC_2_21_016_canonical_plc_stop_classified` (canonical PLC Stop Job — framing layout per `.factory/research/s7comm-canonical-fc-vectors.md` §3, DF-CANONICAL-FRAME-HOLDOUT-001)
 
 ## Story Anchor

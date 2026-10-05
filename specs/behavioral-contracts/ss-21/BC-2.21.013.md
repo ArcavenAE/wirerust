@@ -1,7 +1,7 @@
 ---
 document_type: behavioral-contract
 level: L3
-version: "1.1"
+version: "1.2"
 status: draft
 producer: product-owner
 timestamp: 2026-09-06T00:00:00Z
@@ -14,6 +14,9 @@ capability: CAP-21
 lifecycle_status: active
 introduced: feature-s7comm
 modified:
+  - version: "1.2"
+    date: 2026-10-04
+    change: "STORY-188 pass-2 P2-F-07 (NIT): arm anchor re-cited from :385 (fn signature) to the match-arm line :406-408; function itself stays :385. P2-F-08 (NIT): Invariant 1 "eight-apart" -> "adjacent in FC-space (0x1A-0x1C vs 0x1D-0x1F)"."
   - version: "1.1"
     date: 2026-10-04
     change: "STORY-188 per-story adversarial pass 1 remediation (F-07): replaced every (planned) Architecture marker and the TBD Stories placeholder with concrete anchors verified against worktree HEAD f33b4337 and Stories: STORY-188; added verifying-test list. No behavioral change."
@@ -71,7 +74,7 @@ build its sequence correlation.
 
 1. **Download and Upload are structurally distinct triads never confused**: `0x1A/
    0x1B/0x1C` (download, station→PLC) and `0x1D/0x1E/0x1F` (upload, PLC→station,
-   BC-2.21.014) are eight-apart in FC-space and map to entirely disjoint
+   BC-2.21.014) are adjacent in FC-space (0x1A–0x1C vs 0x1D–0x1F) and map to entirely disjoint
    `S7ClassicFunction` variants — no shared classification path exists between them.
 2. **Per-frame classification, not sequence tracking**: this BC's scope is limited to
    correctly labeling each individual frame; sequence-level correlation state (e.g., a
@@ -119,7 +122,7 @@ covered by the shared match anchored to BC-2.21.017.)
 
 ## Architecture Anchors
 
-- `src/analyzer/s7comm.rs:385` — `0x1A`/`0x1B`/`0x1C` arms of `classify_job_ack_function` (`src/analyzer/s7comm.rs:385`, `pub fn classify_job_ack_function(data, header_len, param_length) -> S7ClassicFunction`) mapping to `S7ClassicFunction::{RequestDownload, DownloadBlock, DownloadEnded}` (:339)
+- `src/analyzer/s7comm.rs:406-408` — `0x1A`/`0x1B`/`0x1C` arms of `classify_job_ack_function` (function at `src/analyzer/s7comm.rs:385`, `pub fn classify_job_ack_function(data, header_len, param_length) -> S7ClassicFunction`) mapping to `S7ClassicFunction::{RequestDownload, DownloadBlock, DownloadEnded}` (:339)
 - `tests/s7comm_analyzer_tests.rs` `mod story_188` — verifying tests: `test_BC_2_21_013_download_triad_classified_independently`, `story_188::vp054::proptest_vp054_download_upload_structural_disjointness` (VP-054)
 - `.factory/research/s7comm-mitre-ics-tagging.md` §Per-technique validation table — T0843/T0889 detection-pattern source
 

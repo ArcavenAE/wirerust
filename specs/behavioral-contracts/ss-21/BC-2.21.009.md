@@ -1,7 +1,7 @@
 ---
 document_type: behavioral-contract
 level: L3
-version: "1.8"
+version: "1.9"
 status: draft
 producer: product-owner
 timestamp: 2026-09-24T12:00:00Z
@@ -14,6 +14,9 @@ capability: CAP-21
 lifecycle_status: active
 introduced: feature-s7comm
 modified:
+  - version: "1.9"
+    date: 2026-10-04
+    change: "STORY-188 pass-2 P2-F-10 (NIT): Architecture Anchors, Stories row and Story Anchor now cross-reference STORY-188 as the story that added the Postcondition 3 recording-gating clause (bounds-failing Ack/Ack_Data records no error observation), citing story_188::vp051_kani::verify_classify_job_ack_function_param_slicing_safe and story_188::test_BC_2_21_008_bounds_failing_ack_data_records_no_ack_error_observation. Orchestrator decision: BC-2.21.009 is NOT added to STORY-188 bcs/behavioral_contracts; it remains STORY-187 contract and STORY-188 is a cross-reference only. No change to Preconditions/Postconditions/Invariants."
   - version: "1.8"
     date: 2026-10-04
     change: "STORY-188 per-story adversarial pass 1 (F-06, orchestrator decision 2026-10-04), sibling to BC-2.21.008 v1.10: Postcondition 3 extended so the 'no downstream consumption on bounds failure' obligation explicitly covers BC-2.21.008's Ack/Ack_Data error-class/code observation recording (list and count map) — a bounds-failing Ack/Ack_Data yields the T0814 finding and no observation. Verified against src/analyzer/s7comm.rs dispatch_classic_s7comm (:1033; recording sits inside the bounds-OK branch). No change to Preconditions/Invariants/Edge Cases.",
@@ -136,7 +139,7 @@ instead of ASDU's implicit body length.
 | L2 Domain Invariants | None directly (bounds-safety contract) |
 | Architecture Module | SS-21 (`src/analyzer/s7comm.rs`) |
 | ADR | ADR-014 Decision 9 |
-| Stories | STORY-187 (also a formal-hardening re-verification anchor for STORY-194) |
+| Stories | STORY-187 (also a formal-hardening re-verification anchor for STORY-194). STORY-188 cross-reference only: STORY-188 added the Postcondition 3 recording-gating clause; BC-2.21.009 is NOT in STORY-188's `bcs`/`behavioral_contracts` and remains STORY-187's contract. |
 | Feature | feature-s7comm |
 | MITRE Techniques | T0814 (Denial of Service) — malformed-header anomaly signal only; emission wiring is a B2 responsibility |
 
@@ -152,9 +155,11 @@ instead of ASDU's implicit body length.
 - `src/analyzer/s7comm.rs` — `pub fn s7comm_bounds_ok(header: &S7commHeader, data_len: usize) -> bool` pure-core free-function bounds check (implemented, STORY-187), called from the private helper `fn dispatch_classic_s7comm` immediately after `parse_s7comm_header` returns `Some`, before any parameter/data-block slicing — extracted as a standalone `pub fn` (rather than inlined at the call site) so the VP-051 Kani harness can call it directly
 - `tests/s7comm_analyzer_tests.rs` — Tests anchor: 12 `test_BC_2_21_009_*` functions (re-counted by direct grep, verified 2026-09-25 against worktree HEAD 38ff7ee1): `test_BC_2_21_009_dissection_bounded_to_own_tpkt_frame`, `test_BC_2_21_009_bounds_check_before_parameter_data_slice`, `test_BC_2_21_009_bounds_check_dedup_s2c`, `test_BC_2_21_009_s7comm_bounds_ok_helper_matches_bounds_decision`, `test_BC_2_21_009_bounds_check_passes_exact_match`, `test_BC_2_21_009_empty_parameter_and_data_blocks_trivial_pass`, `test_BC_2_21_009_overflow_free_arithmetic_max_values`, `test_BC_2_21_009_ack_header_len_12_bounds_check`, `test_BC_2_21_009_data_length_overrun_on_data_emits_t0814`, `test_BC_2_21_009_s7comm_bounds_ok_data_length_only_overrun`, `test_BC_2_21_009_bounds_failure_evidence_reports_declared_and_available`, `test_BC_2_21_009_bounds_failure_evidence_ack_data_header_len_12`.
 
+- `tests/s7comm_analyzer_tests.rs` `mod story_188` (STORY-188 cross-reference, Postcondition 3 recording-gating clause; BC-2.21.009 not in STORY-188's bcs) — `story_188::vp051_kani::verify_classify_job_ack_function_param_slicing_safe` (Kani harness: the classifier's parameter-block slicing is safe on any bounds-checked/unchecked input) and `story_188::test_BC_2_21_008_bounds_failing_ack_data_records_no_ack_error_observation` (bounds-failing Ack_Data records no Ack error observation)
+
 ## Story Anchor
 
-STORY-187 (also a formal-hardening re-verification anchor for STORY-194)
+STORY-187 (also a formal-hardening re-verification anchor for STORY-194). STORY-188 cross-reference only: STORY-188 added the Postcondition 3 recording-gating clause; BC-2.21.009 is NOT in STORY-188's `bcs`/`behavioral_contracts` and remains STORY-187's contract.
 
 ## VP Anchors
 

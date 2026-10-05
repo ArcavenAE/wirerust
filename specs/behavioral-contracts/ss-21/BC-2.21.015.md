@@ -1,7 +1,7 @@
 ---
 document_type: behavioral-contract
 level: L3
-version: "1.1"
+version: "1.2"
 status: draft
 producer: product-owner
 timestamp: 2026-09-06T00:00:00Z
@@ -14,6 +14,9 @@ capability: CAP-21
 lifecycle_status: active
 introduced: feature-s7comm
 modified:
+  - version: "1.2"
+    date: 2026-10-04
+    change: "STORY-188 pass-2 P2-F-07 (NIT): arm anchor re-cited from :385 (fn signature) to the match-arm line :412; function itself stays :385. P2-F-04 (NIT): VP-INDEX.md version ref v2.48 -> v2.55."
   - version: "1.1"
     date: 2026-10-04
     change: "STORY-188 per-story adversarial pass 1 remediation (F-07): replaced every (planned) Architecture marker and the TBD Stories placeholder with concrete anchors verified against worktree HEAD f33b4337 and Stories: STORY-188; added verifying-test list. No behavioral change."
@@ -133,7 +136,7 @@ fuzz-matching totality, mirroring the area-code totality treatment in BC-2.21.01
 
 ## Architecture Anchors
 
-- `src/analyzer/s7comm.rs:385` — `0x28 => S7ClassicFunction::PlcControl(decode_plc_control_service(param))` arm of `classify_job_ack_function` (`src/analyzer/s7comm.rs:385`, `pub fn classify_job_ack_function(data, header_len, param_length) -> S7ClassicFunction`)
+- `src/analyzer/s7comm.rs:412` — `0x28 => S7ClassicFunction::PlcControl(decode_plc_control_service(param))` arm of `classify_job_ack_function` (function at `src/analyzer/s7comm.rs:385`, `pub fn classify_job_ack_function(data, header_len, param_length) -> S7ClassicFunction`)
 - `src/analyzer/s7comm.rs:462` — `fn decode_plc_control_service(param: &[u8]) -> PlcControlService` (service-string decode helper; byte-exact match, every shortfall -> `Unrecognized`)
 - `src/analyzer/s7comm.rs:321` — `pub enum PlcControlService { ProgramStart, BlockActivate, BlockDelete, MemoryCompress, RamToRom, Unrecognized }`
 - `tests/s7comm_analyzer_tests.rs` `mod story_188` — verifying tests: `test_BC_2_21_015_plc_control_service_string_decode`, `test_BC_2_21_015_plc_control_truncated_and_case_variants_unrecognized`, `test_BC_2_21_015_plc_control_trailing_bytes_after_service_string`, `story_188::canonical::test_BC_2_21_015_canonical_plc_control_p_program_classified` (canonical PLC Control "P_PROGRAM" Job — framing layout per `.factory/research/s7comm-canonical-fc-vectors.md` §2, DF-CANONICAL-FRAME-HOLDOUT-001)
@@ -147,7 +150,7 @@ STORY-188
 ## VP Anchors
 
 (None dedicated — no VP-NNN was registered for service-string matching totality in
-the F2 INTEGRATE sub-burst; VP-INDEX.md v2.48 registers no VP with this BC in its
+the F2 INTEGRATE sub-burst; VP-INDEX.md v2.55 registers no VP with this BC in its
 source_bc.)
 
 ## Purity Classification

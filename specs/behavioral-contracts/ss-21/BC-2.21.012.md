@@ -1,7 +1,7 @@
 ---
 document_type: behavioral-contract
 level: L3
-version: "1.1"
+version: "1.2"
 status: draft
 producer: product-owner
 timestamp: 2026-09-06T00:00:00Z
@@ -14,6 +14,9 @@ capability: CAP-21
 lifecycle_status: active
 introduced: feature-s7comm
 modified:
+  - version: "1.2"
+    date: 2026-10-04
+    change: "STORY-188 pass-2 P2-F-07 (NIT): arm anchor re-cited from :385 (fn signature) to the match-arm line :405; function itself stays :385. P2-F-04 (NIT): VP-INDEX.md version ref v2.48 -> v2.55."
   - version: "1.1"
     date: 2026-10-04
     change: "STORY-188 per-story adversarial pass 1 remediation (F-07): replaced every (planned) Architecture marker and the TBD Stories placeholder with concrete anchors verified against worktree HEAD f33b4337 and Stories: STORY-188; added verifying-test list. Postcondition 3 now records the accepted 0xFF placeholder collision (F-09, NIT, accepted residual) and pins the descriptor-length rule (<14 bytes or syntax id != 0x10 -> placeholder) with its boundary test. No behavioral change to the implementation."
@@ -141,7 +144,7 @@ totality treatment.)
 
 ## Architecture Anchors
 
-- `src/analyzer/s7comm.rs:385` — `0x05 => S7ClassicFunction::WriteVar(decode_write_var_area(param))` arm of `classify_job_ack_function` (`src/analyzer/s7comm.rs:385`, `pub fn classify_job_ack_function(data, header_len, param_length) -> S7ClassicFunction`)
+- `src/analyzer/s7comm.rs:405` — `0x05 => S7ClassicFunction::WriteVar(decode_write_var_area(param))` arm of `classify_job_ack_function` (function at `src/analyzer/s7comm.rs:385`, `pub fn classify_job_ack_function(data, header_len, param_length) -> S7ClassicFunction`)
 - `src/analyzer/s7comm.rs:446` — `fn decode_write_var_area(param: &[u8]) -> S7AreaCode` (first-item area decode: `param.len() < 14` or syntax id `param[4] != 0x10` -> `Unrecognized(0xFF)`; area byte at `param[10]`); `src/analyzer/s7comm.rs:422` — `fn area_code_from_byte`
 - `src/analyzer/s7comm.rs:297` — `pub enum S7AreaCode { DirectPeripheral, Inputs, Outputs, Markers, DataBlock, InstanceDb, Counters, Timers, Unrecognized(u8) }`
 - `tests/s7comm_analyzer_tests.rs` `mod story_188` — verifying tests: `test_BC_2_21_012_write_var_area_code_extraction`, `story_188::area_exhaustive::test_BC_2_21_012_write_var_area_code_exhaustive_over_all_u8` (proptest, Invariant 1), `test_BC_2_21_012_write_var_descriptor_length_boundary_11_12_13_14` (F-02 / F-09 boundary), `story_188::canonical::test_BC_2_21_012_canonical_write_var_db_classified`, `story_188::canonical::test_BC_2_21_012_canonical_write_var_outputs_classified` (canonical Write Var Job vectors — framing layout per `.factory/research/s7comm-canonical-fc-vectors.md` §1, DF-CANONICAL-FRAME-HOLDOUT-001)
@@ -154,7 +157,7 @@ STORY-188
 ## VP Anchors
 
 (None dedicated — no VP-NNN was registered for area-code mapping totality in the F2
-INTEGRATE sub-burst; VP-INDEX.md v2.48 registers no VP with this BC in its source_bc.)
+INTEGRATE sub-burst; VP-INDEX.md v2.55 registers no VP with this BC in its source_bc.)
 
 ## Purity Classification
 
