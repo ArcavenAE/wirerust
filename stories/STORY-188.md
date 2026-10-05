@@ -39,7 +39,7 @@ inputs:
   - docs/adr/0014-s7comm-iso-on-tcp-stream-dispatch-and-parser-design.md
   - .factory/research/s7comm-mitre-ics-tagging.md
   - .factory/research/s7comm-canonical-fc-vectors.md
-input-hash: "ba2851e"
+input-hash: "d9a1797"
 ---
 
 > **tdd_mode:** `strict` — full TDD Iron Law enforced.

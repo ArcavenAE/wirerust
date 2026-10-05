@@ -3,13 +3,19 @@
   "story": "STORY-188",
   "cycle": "feature-s7comm",
   "criterion": "BC-5.39.001",
-  "passes_total": 5,
+  "passes_total": 7,
   "passes_clean": [
-    5
+    5,
+    6,
+    7
   ],
-  "closing_trio": [],
+  "closing_trio": [
+    "P5",
+    "P6",
+    "P7"
+  ],
   "last_classification": "NITPICK_ONLY",
-  "verdict": "IN_PROGRESS",
+  "verdict": "CONVERGED",
   "human_rulings": [
     {
       "id": "R1",
@@ -359,6 +365,60 @@
         "360df9b5",
         "731b3ec8"
       ]
+    },
+    "pass_6": {
+      "classification": "CLEAN",
+      "context": "fresh context, branch 731b3ec8",
+      "pass5_verification": "all pass-5 NIT fixes verified",
+      "counts": {
+        "MAJOR": 0,
+        "MINOR": 0,
+        "NIT": 0
+      },
+      "items": []
+    },
+    "pass_7": {
+      "classification": "NITPICK_ONLY",
+      "context": "fresh context, independent full review, no prior-findings list, branch 731b3ec8",
+      "counts": {
+        "MAJOR": 0,
+        "MINOR": 0,
+        "NIT": 4
+      },
+      "items": [
+        {
+          "id": "P7-F-01",
+          "severity": "NIT",
+          "summary": "fixture e2e test overclaims AC trace",
+          "disposition": "fixed",
+          "note": "436912f5; now AC-188-001..008 + 010, explicitly not 009/011"
+        },
+        {
+          "id": "P7-F-02",
+          "severity": "NIT",
+          "summary": "BC-2.21.008 stale '9 test functions' count",
+          "disposition": "fixed",
+          "note": "BC-2.21.008 v1.13 '9 in mod story_187'; BC-INDEX v2.38.24"
+        },
+        {
+          "id": "P7-F-03",
+          "severity": "NIT",
+          "summary": "on_data doc omits new behavior",
+          "disposition": "fixed",
+          "note": "c6bd91e3; s7comm.rs stays 1223 lines"
+        },
+        {
+          "id": "P7-F-04",
+          "severity": "NIT",
+          "summary": "decoder leniency: decode_write_var_area no item-count>=1 / var-spec 0x12 0x0A check; decode_plc_control_service no 0xFD check; spec-conformant per BC-2.21.012 PC3",
+          "disposition": "carry-forward",
+          "note": "STORY-191-192-DECODER-LENIENCY; DF-VALIDATION-001 research validation required before any GitHub issue; none filed"
+        }
+      ],
+      "fix_commits": [
+        "436912f5",
+        "c6bd91e3"
+      ]
     }
   },
   "formal_verification": {
@@ -368,7 +428,8 @@
     "result": "VERIFICATION SUCCESSFUL",
     "counterexamples": "0/540",
     "covers": "4/4",
-    "closes": "PRF-005 (carry-forward; RESOLVED in STORY-188 branch, pending merge)"
+    "closes": "PRF-005 (carry-forward; RESOLVED in STORY-188 branch, pending merge)",
+    "note": "Kani re-run SUCCESSFUL at c6bd91e3; src logic unchanged since"
   },
   "test_suite": {
     "full_suite": "2837 passed / 0 failed",
@@ -377,18 +438,18 @@
   "merge_status": "NOT_YET_MERGED",
   "branch": "feature/STORY-188-s7comm-function-code-classification",
   "worktree": ".worktrees/STORY-188",
-  "head": "731b3ec8",
+  "head": "c6bd91e3",
   "base": "develop 17b00031",
   "timestamp": "2026-10-05T00:00:00Z",
   "producer": "state-manager",
-  "note": "Pass 5 NITPICK_ONLY (1/3 clean), NITs fixed; pass 6 (fresh context) is next. Supplement to the eventual convergence-report.md.",
+  "note": "CONVERGED at pass 7 (closing trio P5/P6/P7). Supplement to convergence-report.md.",
   "spec_versions": {
-    "BC-2.21.008": "v1.12",
+    "BC-2.21.008": "v1.13",
     "BC-2.21.009": "v1.12",
     "BC-2.21.010/013/015/016/017": "v1.4 (BC-2.21.017 now v1.5)",
     "BC-2.21.011/012/014": "v1.3",
-    "BC-INDEX": "v2.38.23",
-    "STORY-188": "v1.7 (input-hash ba2851e)",
+    "BC-INDEX": "v2.38.24",
+    "STORY-188": "v1.7 (input-hash d9a1797)",
     "BC-2.21.017": "v1.5"
   },
   "reverse_check_sweep": {
@@ -406,5 +467,6 @@
       "test-writer: EC citations disambiguated in story_188 test docs (two mis-attributions ~5593/~5863)"
     ]
   },
-  "process_gap": "Sibling-sweep misses recurred in passes 2 and 3 (lessons.md item 16); no automated BC frontmatter YAML validation (lessons.md item 17); lesson candidates, decide at cycle close"
+  "process_gap": "Sibling-sweep misses recurred in passes 2 and 3 (lessons.md item 16); no automated BC frontmatter YAML validation (lessons.md item 17); lesson candidates, decide at cycle close",
+  "closure_authority": "BC-5.39.001 criterion met (3 consecutive clean, last NITPICK_ONLY)"
 }

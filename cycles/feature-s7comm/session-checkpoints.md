@@ -272,3 +272,8 @@ Prior checkpoints archived to `cycles/feature-iec104/session-checkpoints.md` and
 - **Pending human decisions / blockers:** `PG-MERGE-CLASSIFIER-F4` (human merges F4 PRs); open Dependabot PRs; drift items per `cycles/feature-s7comm/drift-items-and-carry-forwards.md` (PRF-005 RESOLVED in branch pending merge); 22 pre-existing background-stale story input-hashes (untouched).
 - **WIP branch list with SHAs:** `feature/STORY-188-s7comm-function-code-classification` = `e24c6f7d` (WIP, unmerged).
 - **Resume command:** open session in `/Users/zious/Documents/GITHUB/wirerust`, run `/vsdd-factory:rehydrate-wave` then `/vsdd-factory:next-step`; dispatch adversary pass 3 on STORY-188.
+
+## STORY-188 F4 WIP CHECKPOINT (D-572..D-577, 2026-10-05) — archived by D-578
+
+Pipeline IN-PROGRESS. STORY-188 (wave 91) at Step 4.5 per-story adversarial; passes 1-4 HAS_FINDINGS remediated, pass 5 NITPICK_ONLY (NITs fixed), pass 6 NEXT. Branch `feature/STORY-188-s7comm-function-code-classification` HEAD `731b3ec8` (WIP), 2837/0, clippy/fmt/doc-tense clean, Kani green. develop `17b00031`; main `46ebd6e3`. Counter 1/3 clean (pass 5). Open: PG-MERGE-CLASSIFIER-F4; lessons 16/17 process-gaps; 22 background-stale hashes.
+
