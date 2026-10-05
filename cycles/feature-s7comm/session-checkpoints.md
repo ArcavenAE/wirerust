@@ -277,3 +277,18 @@ Prior checkpoints archived to `cycles/feature-iec104/session-checkpoints.md` and
 
 Pipeline IN-PROGRESS. STORY-188 (wave 91) at Step 4.5 per-story adversarial; passes 1-4 HAS_FINDINGS remediated, pass 5 NITPICK_ONLY (NITs fixed), pass 6 NEXT. Branch `feature/STORY-188-s7comm-function-code-classification` HEAD `731b3ec8` (WIP), 2837/0, clippy/fmt/doc-tense clean, Kani green. develop `17b00031`; main `46ebd6e3`. Counter 1/3 clean (pass 5). Open: PG-MERGE-CLASSIFIER-F4; lessons 16/17 process-gaps; 22 background-stale hashes.
 
+
+
+## Archived by D-579 (2026-10-05) — STORY-188 WIP checkpoint D-572..D-578
+
+**STORY-188 F4 WIP CHECKPOINT (D-572..D-578, 2026-10-05).** Pipeline IN-PROGRESS (resumed from D-571 pause); STATE.md `version` 4.4→4.5.
+
+Prior checkpoints archived to `cycles/feature-iec104/session-checkpoints.md` and `cycles/wave-084/session-checkpoints.md` and `cycles/wave-085/session-checkpoints.md` and `cycles/wave-086/session-checkpoints.md` (D-554) and `cycles/maint-2026-09-05/session-checkpoints.md` (D-553, D-555, D-556) and `cycles/feature-s7comm/session-checkpoints.md` (D-558, D-559, D-560, D-561, D-562, D-563, D-564, D-565, D-566, D-567, D-568, D-569, D-570, D-571).
+
+- **Date + position:** 2026-10-05; Feature Mode feature-s7comm, F4, 4/11 delivered; STORY-188 (wave 91) per-story adversarial **CONVERGED** (7 passes, closing trio P5/P6/P7); **Step 5 demo recording NEXT**, then push + pr-manager. `develop` `17b00031`; `main` `46ebd6e3` (v0.13.3).
+- **Convergence counter:** STORY-188 CONVERGED, 7 passes, passes_clean [5,6,7]; criterion BC-5.39.001 satisfied.
+- **In-flight work:** worktree `/Users/zious/Documents/GITHUB/wirerust/.worktrees/STORY-188`, branch `feature/STORY-188-s7comm-function-code-classification`, HEAD `c6bd91e3`, 2837 pass / 0 fail, clippy/fmt/green-doc-tense clean, Kani green. No PR yet. Next: demo-recorder -> push -> pr-manager.
+- **Pending human decisions / blockers:** `PG-MERGE-CLASSIFIER-F4` (human merges F4 PRs); open Dependabot PRs; drift items per `cycles/feature-s7comm/drift-items-and-carry-forwards.md` (PRF-005 RESOLVED in branch pending merge); 22 pre-existing background-stale story input-hashes (untouched); sibling-sweep process-gap (lessons.md item 16) and BC-frontmatter-YAML-validation process-gap (item 17) need a follow-up story or justified deferral at cycle close (S-7.02); new carry-forward `STORY-191-192-DECODER-LENIENCY` (research-validate before any issue).
+- **WIP branch list with SHAs:** `feature/STORY-188-s7comm-function-code-classification` = `c6bd91e3` (WIP, unmerged).
+- **Resume command:** open session in `/Users/zious/Documents/GITHUB/wirerust`, run `/vsdd-factory:rehydrate-wave` then `/vsdd-factory:next-step`; dispatch demo-recorder for STORY-188 (Step 5).
+
