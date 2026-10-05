@@ -1,7 +1,7 @@
 ---
 document_type: behavioral-contract
 level: L3
-version: "1.9"
+version: "1.10"
 status: draft
 producer: product-owner
 timestamp: 2026-09-24T12:00:00Z
@@ -14,6 +14,9 @@ capability: CAP-21
 lifecycle_status: active
 introduced: feature-s7comm
 modified:
+  - version: "1.10"
+    date: 2026-10-05
+    change: "STORY-188 pass-3 P3-F-04 (MINOR): Architecture Anchors Kani-harness claim narrowed from 'safe on any bounds-checked/unchecked input' to 'safe on any input that passes `s7comm_bounds_ok`' (the harness returns early unless `s7comm_bounds_ok`; unchecked-input safety comes from `data.get(..)` in `classify_job_ack_function` and is not proven by the harness). Pass-3 sweep: Verification Properties '(planned)' marker dropped (VP-051 registered) and proof scope stated as the bounded Kani harnesses actually registered (<=16-byte header buffers, data_len <= 3*u16::MAX, plus the STORY-188 <=32-byte classifier-slicing harness) rather than 'any data.len()'."
   - version: "1.9"
     date: 2026-10-04
     change: "STORY-188 pass-2 P2-F-10 (NIT): Architecture Anchors, Stories row and Story Anchor now cross-reference STORY-188 as the story that added the Postcondition 3 recording-gating clause (bounds-failing Ack/Ack_Data records no error observation), citing story_188::vp051_kani::verify_classify_job_ack_function_param_slicing_safe and story_188::test_BC_2_21_008_bounds_failing_ack_data_records_no_ack_error_observation. Orchestrator decision: BC-2.21.009 is NOT added to STORY-188 bcs/behavioral_contracts; it remains STORY-187 contract and STORY-188 is a cross-reference only. No change to Preconditions/Postconditions/Invariants."
@@ -126,9 +129,9 @@ instead of ASDU's implicit body length.
 
 ## Verification Properties
 
-| Property | Proof Method (planned) |
+| Property | Proof Method |
 |----------|-------------------------|
-| No out-of-bounds slice is ever constructed from `header_len`, `param_length`, and `data_length` for any combination of `u16` values and any `data.len()` | VP-051 (Kani P0) — "S7comm Header Bounds-Before-Slice Safety," joint with BC-2.21.004, BC-2.21.006, BC-2.21.007, BC-2.21.008 (see VP Anchors below); registered F2 INTEGRATE sub-burst per VP-INDEX.md (arithmetic/bounds safety over the full `u16 × u16` space is small enough for exhaustive symbolic proof); cargo-fuzz P1 (VP-055) provides complementary combined-chain no-panic coverage (F-35) |
+| No out-of-bounds slice is ever constructed from `header_len`, `param_length`, and `data_length` for any combination of `u16` values: `s7comm_bounds_ok` is proven exactly equal to `data_len >= header_len + param_length + data_length` (symbolic `data_len <= 3*u16::MAX`, header from a <=16-byte symbolic buffer), and bounds-ok implies the classifier's parameter-block slicing is safe (<=32-byte symbolic buffer) | VP-051 (Kani P0) — "S7comm Header Bounds-Before-Slice Safety," joint with BC-2.21.004, BC-2.21.006, BC-2.21.007, BC-2.21.008 (see VP Anchors below); registered F2 INTEGRATE sub-burst per VP-INDEX.md (three registered Kani harnesses, VP-INDEX v2.55: `verify_parse_s7comm_header_bounds_safety`, `verify_s7comm_bounds_ok_bounds_safety`, `story_188::vp051_kani::verify_classify_job_ack_function_param_slicing_safe`; bounded inputs as stated, not an unbounded proof); cargo-fuzz P1 (VP-055) provides complementary combined-chain no-panic coverage (F-35) |
 
 ## Traceability
 
@@ -155,7 +158,7 @@ instead of ASDU's implicit body length.
 - `src/analyzer/s7comm.rs` — `pub fn s7comm_bounds_ok(header: &S7commHeader, data_len: usize) -> bool` pure-core free-function bounds check (implemented, STORY-187), called from the private helper `fn dispatch_classic_s7comm` immediately after `parse_s7comm_header` returns `Some`, before any parameter/data-block slicing — extracted as a standalone `pub fn` (rather than inlined at the call site) so the VP-051 Kani harness can call it directly
 - `tests/s7comm_analyzer_tests.rs` — Tests anchor: 12 `test_BC_2_21_009_*` functions (re-counted by direct grep, verified 2026-09-25 against worktree HEAD 38ff7ee1): `test_BC_2_21_009_dissection_bounded_to_own_tpkt_frame`, `test_BC_2_21_009_bounds_check_before_parameter_data_slice`, `test_BC_2_21_009_bounds_check_dedup_s2c`, `test_BC_2_21_009_s7comm_bounds_ok_helper_matches_bounds_decision`, `test_BC_2_21_009_bounds_check_passes_exact_match`, `test_BC_2_21_009_empty_parameter_and_data_blocks_trivial_pass`, `test_BC_2_21_009_overflow_free_arithmetic_max_values`, `test_BC_2_21_009_ack_header_len_12_bounds_check`, `test_BC_2_21_009_data_length_overrun_on_data_emits_t0814`, `test_BC_2_21_009_s7comm_bounds_ok_data_length_only_overrun`, `test_BC_2_21_009_bounds_failure_evidence_reports_declared_and_available`, `test_BC_2_21_009_bounds_failure_evidence_ack_data_header_len_12`.
 
-- `tests/s7comm_analyzer_tests.rs` `mod story_188` (STORY-188 cross-reference, Postcondition 3 recording-gating clause; BC-2.21.009 not in STORY-188's bcs) — `story_188::vp051_kani::verify_classify_job_ack_function_param_slicing_safe` (Kani harness: the classifier's parameter-block slicing is safe on any bounds-checked/unchecked input) and `story_188::test_BC_2_21_008_bounds_failing_ack_data_records_no_ack_error_observation` (bounds-failing Ack_Data records no Ack error observation)
+- `tests/s7comm_analyzer_tests.rs` `mod story_188` (STORY-188 cross-reference, Postcondition 3 recording-gating clause; BC-2.21.009 not in STORY-188's bcs) — `story_188::vp051_kani::verify_classify_job_ack_function_param_slicing_safe` (Kani harness, bounded to a <=32-byte symbolic buffer: the classifier's parameter-block slicing never panics and returns `NoParameterBlock` iff `param_length == 0`, **on any input that passes `s7comm_bounds_ok`** — the harness returns early unless `parse_s7comm_header` is `Some` and `s7comm_bounds_ok` holds, so unchecked-input safety is NOT proven by it; that safety comes from the `data.get(header_len..end)` / `checked_add` guards in `classify_job_ack_function` (`src/analyzer/s7comm.rs` ~:396), which yield `NoParameterBlock` instead of panicking) and `story_188::test_BC_2_21_008_bounds_failing_ack_data_records_no_ack_error_observation` (bounds-failing Ack_Data records no Ack error observation)
 
 ## Story Anchor
 

@@ -1,7 +1,7 @@
 ---
 document_type: behavioral-contract
 level: L3
-version: "1.2"
+version: "1.3"
 status: draft
 producer: product-owner
 timestamp: 2026-09-06T00:00:00Z
@@ -14,6 +14,9 @@ capability: CAP-21
 lifecycle_status: active
 introduced: feature-s7comm
 modified:
+  - version: "1.3"
+    date: 2026-10-05
+    change: "STORY-188 pass-3 sweep (no finding): `ReadVar` variant anchor clarified (variant of the `S7ClassicFunction` enum at :339); anchors and both verifying tests re-verified against worktree HEAD e24c6f7d; VP citations re-checked (no VP names this BC)."
   - version: "1.2"
     date: 2026-10-04
     change: "STORY-188 pass-2 P2-F-07 (NIT): arm anchor re-cited from :385 (fn signature) to the match-arm line :404; function itself stays :385."
@@ -105,7 +108,7 @@ to BC-2.21.017.)
 
 ## Architecture Anchors
 
-- `src/analyzer/s7comm.rs:404` — `0x04 => S7ClassicFunction::ReadVar` arm of `classify_job_ack_function` (function at `src/analyzer/s7comm.rs:385`, `pub fn classify_job_ack_function(data, header_len, param_length) -> S7ClassicFunction`); no area decode (the `ReadVar` variant at :339 carries no payload)
+- `src/analyzer/s7comm.rs:404` — `0x04 => S7ClassicFunction::ReadVar` arm of `classify_job_ack_function` (function at `src/analyzer/s7comm.rs:385`, `pub fn classify_job_ack_function(data, header_len, param_length) -> S7ClassicFunction`); no area decode (the `ReadVar` variant of the `S7ClassicFunction` enum at :339 carries no payload)
 - `tests/s7comm_analyzer_tests.rs` `mod story_188` — verifying tests: `test_BC_2_21_011_read_var_classified_no_area_decode`, `story_188::canonical::test_BC_2_21_011_canonical_read_var_db_classified` (canonical Read Var Job, S7ANY DB area 0x84 — framing layout per `.factory/research/s7comm-canonical-fc-vectors.md` §4, DF-CANONICAL-FRAME-HOLDOUT-001)
 
 ## Story Anchor

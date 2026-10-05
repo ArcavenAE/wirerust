@@ -1,7 +1,7 @@
 ---
 document_type: behavioral-contract
 level: L3
-version: "1.2"
+version: "1.3"
 status: draft
 producer: product-owner
 timestamp: 2026-09-06T00:00:00Z
@@ -14,6 +14,9 @@ capability: CAP-21
 lifecycle_status: active
 introduced: feature-s7comm
 modified:
+  - version: "1.3"
+    date: 2026-10-05
+    change: "STORY-188 pass-3 sweep (no P3-F finding): Verification Properties no longer implies a registered/enumerated proof — the area-code mapping is covered by the 2000-case proptest `test_BC_2_21_012_write_var_area_code_exhaustive_over_all_u8` (sampled over `any::<u8>()`, not enumerated, no VP-NNN); Postcondition 2 no longer says the area-byte offset is deferred (it is pinned: parameter offset 10, syntax id at offset 4 — canonical vectors, `.factory/research/s7comm-canonical-fc-vectors.md` §1/§4, and Postcondition 3's pinned-length rule)."
   - version: "1.2"
     date: 2026-10-04
     change: "STORY-188 pass-2 P2-F-07 (NIT): arm anchor re-cited from :385 (fn signature) to the match-arm line :405; function itself stays :385. P2-F-04 (NIT): VP-INDEX.md version ref v2.48 -> v2.55."
@@ -58,10 +61,10 @@ Invariant 2). `S7AreaCode` maps the recognized area values: `0x80` Direct Periph
 
 1. The frame is classified `S7ClassicFunction::WriteVar(area)`.
 2. If the parameter block contains a well-formed first address-item descriptor with a
-   readable area-code byte at its expected offset (implementation-detail offset within
-   the S7ANY item-descriptor convention, deferred to architect/implementer — the
-   *values* this BC pins are load-bearing, the exact byte offset within a
-   variable-length item descriptor is not), `area` is set per the mapping table above.
+   readable area-code byte at its expected offset (S7ANY item-descriptor convention: the area byte is at parameter-block offset 10,
+   the syntax-id byte at offset 4 — pinned by the canonical vectors in
+   `.factory/research/s7comm-canonical-fc-vectors.md` §1/§4 and by Postcondition 3's
+   descriptor-length rule), `area` is set per the mapping table above.
 3. If the item descriptor cannot be read (insufficient remaining parameter-block
    bytes for a full item descriptor, or a non-S7ANY syntax ID that this feature does
    not decode), `area` is `S7AreaCode::Unrecognized(0xFF)`-equivalent placeholder —
@@ -119,9 +122,12 @@ Invariant 2). `S7AreaCode` maps the recognized area values: `0x80` Direct Periph
 
 ## Verification Properties
 
-(No independent VP-NNN — table-driven unit tests for the area-code mapping's
-exhaustiveness over all 256 `u8` values; proptest P1 candidate mirroring VP-046's
-totality treatment.)
+(No independent VP-NNN — the area-code mapping (Invariant 1) is covered by the
+2000-case proptest `story_188::area_exhaustive::test_BC_2_21_012_write_var_area_code_exhaustive_over_all_u8`,
+which SAMPLES `any::<u8>()` against an independent oracle (it does not enumerate all 256
+values deterministically and is not a registered VP); descriptor-length boundary by
+`test_BC_2_21_012_write_var_descriptor_length_boundary_11_12_13_14`. A registered
+proptest P1 VP mirroring VP-046's totality treatment remains a candidate only.)
 
 ## Traceability
 

@@ -1,7 +1,7 @@
 ---
 document_type: behavioral-contract
 level: L3
-version: "1.2"
+version: "1.3"
 status: draft
 producer: product-owner
 timestamp: 2026-09-06T00:00:00Z
@@ -14,6 +14,9 @@ capability: CAP-21
 lifecycle_status: active
 introduced: feature-s7comm
 modified:
+  - version: "1.3"
+    date: 2026-10-05
+    change: "STORY-188 pass-3 P3-F-02 (MAJOR): Verification Properties and VP Anchors no longer deny a VP — VP-054 (proptest P1, Download/Upload structural disjointness; registered VP-INDEX v2.55, source_bc BC-2.21.013/BC-2.21.014) is named. Pass-3 sweep: the claim that a test 'asserts the sub-ranges never share a match arm' (overclaim — a behavioural test cannot assert syntactic arms) restated as behavioural disjointness."
   - version: "1.2"
     date: 2026-10-04
     change: "STORY-188 pass-2 P2-F-07 (NIT): arm anchor re-cited from :385 (fn signature) to the match-arm line :409-411; function itself stays :385."
@@ -90,9 +93,18 @@ could otherwise conflate the two triads.
 
 ## Verification Properties
 
-(No independent VP-NNN — table-driven unit tests; totality covered by the shared match
-anchored to BC-2.21.017. A dedicated regression-guard test asserts the `0x1A..=0x1C`
-and `0x1D..=0x1F` sub-ranges never share a match arm.)
+VP-054 (proptest P1) — Download/Upload structural disjointness (registered in VP-INDEX
+v2.55; `source_bc` BC-2.21.013, BC-2.21.014; status draft). Verified by
+`story_188::vp054::proptest_vp054_download_upload_structural_disjointness` (2000 cases
+over `any::<u8>()`; the story_188 harness is a skeleton, full non-vacuous run deferred to
+STORY-194), which is the regression guard against a collapsed `0x1A..=0x1F` range: it
+asserts BEHAVIOURAL disjointness (no FC yields both a Download and an Upload variant,
+and each of `0x1D..=0x1F` maps one-to-one to its Upload variant) — it cannot assert
+that the source match uses separate arms; that structural fact is established by
+inspection of the match (Architecture Anchors). Also covered by the table-driven
+`test_BC_2_21_014_upload_triad_classified_disjoint_from_download` (including boundary
+neighbours `0x19`/`0x20` -> `Unrecognized`); overall FC-match totality by BC-2.21.017
+(VP-052).
 
 ## Traceability
 
@@ -123,7 +135,8 @@ STORY-188
 
 ## VP Anchors
 
-(None dedicated.)
+- VP-054 (proptest P1) — Program-Download / Upload Structural Disjointness; registered
+  VP-INDEX v2.55, traces BC-2.21.013, BC-2.21.014 (draft)
 
 ## Purity Classification
 

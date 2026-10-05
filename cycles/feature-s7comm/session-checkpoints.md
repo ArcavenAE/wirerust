@@ -259,3 +259,16 @@ Prior checkpoints archived to `cycles/feature-iec104/session-checkpoints.md` and
 **Superseded by:** STORY-188 F4 WIP CHECKPOINT (D-572/D-573, 2026-10-04) (current, see STATE.md).
 
 ---
+
+## STORY-188 F4 WIP CHECKPOINT (D-572/D-573/D-574, 2026-10-04) — archived verbatim 2026-10-05 (D-575)
+
+**STORY-188 F4 WIP CHECKPOINT (D-572/D-573/D-574, 2026-10-04).** Pipeline IN-PROGRESS (resumed from D-571 pause); STATE.md `version` 4.0→4.1.
+
+Prior checkpoints archived to `cycles/feature-iec104/session-checkpoints.md` and `cycles/wave-084/session-checkpoints.md` and `cycles/wave-085/session-checkpoints.md` and `cycles/wave-086/session-checkpoints.md` (D-554) and `cycles/maint-2026-09-05/session-checkpoints.md` (D-553, D-555, D-556) and `cycles/feature-s7comm/session-checkpoints.md` (D-558, D-559, D-560, D-561, D-562, D-563, D-564, D-565, D-566, D-567, D-568, D-569, D-570, D-571).
+
+- **Date + position:** 2026-10-04; Feature Mode feature-s7comm, F4, 4/11 delivered; STORY-188 (wave 91) in delivery at Step 4.5 per-story adversarial convergence — passes 1-2 HAS_FINDINGS remediated, **pass 3 (fresh context) NEXT**. `develop` `17b00031`; `main` `46ebd6e3` (v0.13.3).
+- **Convergence counter:** STORY-188 loop active, 2 passes, 0 clean; criterion BC-5.39.001 (3 consecutive clean needed).
+- **In-flight work:** worktree `/Users/zious/Documents/GITHUB/wirerust/.worktrees/STORY-188`, branch `feature/STORY-188-s7comm-function-code-classification`, HEAD `e24c6f7d`, 2836 pass / 0 fail, clippy/fmt/green-doc-tense clean, Kani green. No PR yet.
+- **Pending human decisions / blockers:** `PG-MERGE-CLASSIFIER-F4` (human merges F4 PRs); open Dependabot PRs; drift items per `cycles/feature-s7comm/drift-items-and-carry-forwards.md` (PRF-005 RESOLVED in branch pending merge); 22 pre-existing background-stale story input-hashes (untouched).
+- **WIP branch list with SHAs:** `feature/STORY-188-s7comm-function-code-classification` = `e24c6f7d` (WIP, unmerged).
+- **Resume command:** open session in `/Users/zious/Documents/GITHUB/wirerust`, run `/vsdd-factory:rehydrate-wave` then `/vsdd-factory:next-step`; dispatch adversary pass 3 on STORY-188.

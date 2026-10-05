@@ -1,7 +1,7 @@
 ---
 document_type: behavioral-contract
 level: L3
-version: "1.2"
+version: "1.3"
 status: draft
 producer: product-owner
 timestamp: 2026-09-06T00:00:00Z
@@ -14,6 +14,9 @@ capability: CAP-21
 lifecycle_status: active
 introduced: feature-s7comm
 modified:
+  - version: "1.3"
+    date: 2026-10-05
+    change: "STORY-188 pass-3 P3-F-05 (NIT): EC-001 'Unrecognized-adjacent "no function code present" case' now names `S7ClassicFunction::NoParameterBlock` (per BC-2.21.017 PC2). Pass-3 sweep: Job/AckData call-site anchors corrected (~1084/~1091 -> ~1079/~1087, verified at worktree HEAD e24c6f7d); VP-052 citation clarified (VP-052 source_bc is BC-2.21.017/019/022/023; this BC is covered only via the shared FC-match totality)."
   - version: "1.2"
     date: 2026-10-04
     change: "STORY-188 pass-2 P2-F-07 (NIT): arm anchor re-cited from :385 (fn signature) to the match-arm line :403; function itself stays :385."
@@ -82,7 +85,7 @@ by BC-2.21.011 through BC-2.21.016).
 
 | ID | Description | Expected Behavior |
 |----|-------------|-------------------|
-| EC-001 | `param_length == 0` (no FC byte present at all) — see BC-2.21.017 Edge Case for the shared empty-parameter-block treatment | Classified as `S7ClassicFunction::Unrecognized`-adjacent "no function code present" case, defined once in BC-2.21.017 and referenced by every classification BC in this group |
+| EC-001 | `param_length == 0` (no FC byte present at all) — see BC-2.21.017 Edge Case for the shared empty-parameter-block treatment | Classified `S7ClassicFunction::NoParameterBlock` (a variant distinct from `Unrecognized(fc)`, BC-2.21.017 Postcondition 2), defined once in BC-2.21.017 and referenced by every classification BC in this group |
 | EC-002 | `data[header_len] == 0xF0` but `header.rosctr == Userdata` | Not reachable — Userdata's parameter block has a structurally different layout (BC-2.21.018); this precondition's ROSCTR gate prevents cross-interpretation |
 
 ## Canonical Test Vectors
@@ -120,9 +123,9 @@ BC-2.21.017, the terminal `Unrecognized` fallback arm.)
 
 ## Architecture Anchors
 
-- `src/analyzer/s7comm.rs:403` — `classify_job_ack_function` (function at `src/analyzer/s7comm.rs:385`, `pub fn classify_job_ack_function(data, header_len, param_length) -> S7ClassicFunction`), `0xF0 => S7ClassicFunction::SetupCommunication` arm; called from `dispatch_classic_s7comm` (:1033) for `Rosctr::Job` (~1084) and `Rosctr::AckData` (~1091) after the BC-2.21.009 bounds check
+- `src/analyzer/s7comm.rs:403` — `classify_job_ack_function` (function at `src/analyzer/s7comm.rs:385`, `pub fn classify_job_ack_function(data, header_len, param_length) -> S7ClassicFunction`), `0xF0 => S7ClassicFunction::SetupCommunication` arm; called from `dispatch_classic_s7comm` (:1033) for `Rosctr::Job` (~1079) and `Rosctr::AckData` (~1087) after the BC-2.21.009 bounds check
 - `src/analyzer/s7comm.rs:339` — `pub enum S7ClassicFunction { SetupCommunication, ReadVar, WriteVar(S7AreaCode), RequestDownload, DownloadBlock, DownloadEnded, StartUpload, Upload, EndUpload, PlcControl(PlcControlService), PlcStop, Unrecognized(u8), NoParameterBlock }` (the classification surface part B2 maps MITRE techniques onto; `NoParameterBlock` added for BC-2.21.017)
-- `tests/s7comm_analyzer_tests.rs` `mod story_188` — verifying tests: `test_BC_2_21_010_setup_communication_classified`, `test_BC_2_21_010_fc_classification_fixture_pcap_end_to_end`, `story_188::canonical::test_BC_2_21_010_canonical_setup_communication_ack_data_classified` (canonical Setup Communication Ack_Data vector, cnblogs source per BC-2.21.008 Canonical Test Vectors), plus `story_188::vp052::proptest_vp052_fc_classification_totality` (VP-052)
+- `tests/s7comm_analyzer_tests.rs` `mod story_188` — verifying tests: `test_BC_2_21_010_setup_communication_classified`, `test_BC_2_21_010_fc_classification_fixture_pcap_end_to_end`, `story_188::canonical::test_BC_2_21_010_canonical_setup_communication_ack_data_classified` (canonical Setup Communication Ack_Data vector, cnblogs source per BC-2.21.008 Canonical Test Vectors), plus `story_188::vp052::proptest_vp052_fc_classification_totality` (exercises this arm as part of the shared FC-match totality anchored to BC-2.21.017; VP-INDEX v2.55 VP-052 `source_bc` lists BC-2.21.017/019/022/023, not this BC)
 - `.factory/research/s7comm-mitre-ics-tagging.md` §S7comm wire-field basis — FC table source
 
 ## Story Anchor

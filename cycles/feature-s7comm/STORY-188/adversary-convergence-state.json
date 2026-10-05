@@ -3,7 +3,7 @@
   "story": "STORY-188",
   "cycle": "feature-s7comm",
   "criterion": "BC-5.39.001",
-  "passes_total": 2,
+  "passes_total": 3,
   "passes_clean": [],
   "closing_trio": [],
   "last_classification": "HAS_FINDINGS",
@@ -197,6 +197,64 @@
         "7fcf3a5b",
         "e24c6f7d"
       ]
+    },
+    "pass_3": {
+      "classification": "HAS_FINDINGS",
+      "context": "fresh context, Phase A attestation valid at branch e24c6f7d / develop 17b00031",
+      "pass2_verification": "all 10 pass-2 findings VERIFIED-FIXED",
+      "counts": {
+        "MAJOR": 1,
+        "MINOR": 3,
+        "NIT": 3
+      },
+      "items": [
+        {
+          "id": "P3-F-01",
+          "severity": "MINOR",
+          "summary": "BC-2.21.008 anchors omit Userdata test",
+          "disposition": "fixed"
+        },
+        {
+          "id": "P3-F-02",
+          "severity": "MAJOR",
+          "summary": "BC-2.21.013/014 denied VP while VP-INDEX VP-054 lists them (sibling miss of P2-F-04)",
+          "disposition": "fixed"
+        },
+        {
+          "id": "P3-F-03",
+          "severity": "MINOR",
+          "summary": "BC-2.21.016 false \"no service-string\" claim vs canonical PLC Stop vector",
+          "disposition": "fixed"
+        },
+        {
+          "id": "P3-F-04",
+          "severity": "MINOR",
+          "summary": "BC-2.21.009 Kani harness overclaim",
+          "disposition": "fixed"
+        },
+        {
+          "id": "P3-F-05",
+          "severity": "NIT",
+          "summary": "BC-2.21.010 EC-001 wording",
+          "disposition": "fixed"
+        },
+        {
+          "id": "P3-F-06",
+          "severity": "NIT",
+          "summary": "test banner \"logged\" + fixture docstrings",
+          "disposition": "fixed"
+        },
+        {
+          "id": "P3-F-07",
+          "severity": "NIT",
+          "summary": "AC-188-011 research-doc claim",
+          "disposition": "fixed"
+        }
+      ],
+      "remediation_commits": [
+        "861c7f0b",
+        "cc8dbf22"
+      ]
     }
   },
   "formal_verification": {
@@ -215,15 +273,32 @@
   "merge_status": "NOT_YET_MERGED",
   "branch": "feature/STORY-188-s7comm-function-code-classification",
   "worktree": ".worktrees/STORY-188",
-  "head": "e24c6f7d",
+  "head": "cc8dbf22",
   "base": "develop 17b00031",
-  "timestamp": "2026-10-04T00:00:00Z",
+  "timestamp": "2026-10-05T00:00:00Z",
   "producer": "state-manager",
-  "note": "Pass 2 remediated; pass 3 (fresh context) is next. Supplement to the eventual convergence-report.md.",
+  "note": "Pass 3 remediated (plus whole-BC-set reverse-check sweep); pass 4 (fresh context) is next. Supplement to the eventual convergence-report.md.",
   "spec_versions": {
-    "BC-2.21.009": "v1.9",
-    "BC-2.21.010..017": "v1.2",
-    "BC-INDEX": "v2.38.20",
-    "STORY-188": "v1.4 (input-hash 9c3734a)"
-  }
+    "BC-2.21.008": "v1.11",
+    "BC-2.21.009": "v1.10",
+    "BC-2.21.010..017": "v1.3",
+    "BC-INDEX": "v2.38.21",
+    "STORY-188": "v1.5 (input-hash 3ae34a3)"
+  },
+  "reverse_check_sweep": {
+    "scope": "BC-2.21.008..017 (VP both directions, test citations, description vs PC/EC, line anchors, overclaims)",
+    "mandated_by": "orchestrator",
+    "additional_defects_fixed": 12,
+    "details": [
+      "AckData/Job anchor line drift in BC-008/010",
+      "BC-010 VP-052 mis-citation",
+      "BC-009 overclaims + \"(planned)\" marker",
+      "BC-012 PC2 offset contradiction + VP wording",
+      "BC-014 match-arm overclaim",
+      "BC-015 proptest wording",
+      "BC-017 new EC-005 + VP scope",
+      "test-writer: EC citations disambiguated in story_188 test docs (two mis-attributions ~5593/~5863)"
+    ]
+  },
+  "process_gap": "Sibling-sweep misses recurred in passes 2 and 3 (lessons.md item 16); lesson candidate, decide at cycle close"
 }

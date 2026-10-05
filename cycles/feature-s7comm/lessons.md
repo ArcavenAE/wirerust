@@ -238,6 +238,17 @@ _(none recorded this cycle)_
     `cycles/feature-s7comm/STORY-187/convergence-report.md`.
     _Discovered: STORY-187 per-story adversarial convergence, 2026-09-24/25._
 
+16. **[process-gap] Sibling-sweep misses recurred in STORY-188 passes 2 and 3 despite DF-SIBLING-SWEEP-001 checklists** —
+    P2-F-04 (stale VP refs) recurred as P3-F-02 (BC-2.21.013/014 denied VP while VP-INDEX VP-054 lists them), and P2-F-05
+    (Userdata non-recording untested) recurred as P3-F-01 (BC-2.21.008 anchors omit the Userdata test). Root cause: the
+    per-finding sibling checklist scope was too narrow (siblings of the cited instance, not the whole BC set). Mitigation
+    applied in pass 3: an orchestrator-mandated whole-BC-set reverse-check sweep of BC-2.21.008..017 (VP both directions,
+    test citations, description vs PC/EC, line anchors, overclaims) that found 12 further defects. Related to lessons 8, 9
+    and 11. Disposition: **not yet codified** (>=3 recurrence threshold not reached within this story); recorded as a
+    lesson candidate; per the Cycle-Closing Checklist this needs a **follow-up decision at cycle close** (candidate policy:
+    whole-BC-set reverse-check table as a standard remediation-burst step).
+    _Discovered: STORY-188 per-story adversarial pass 3, 2026-10-05._
+
 ## Infrastructure-Level
 
 1. **[infra] Nested-subagent messaging deadlock** — pr-manager (dispatched as a subagent for
@@ -296,3 +307,4 @@ _(none recorded this cycle)_
 | 11 | Add a mechanical sibling-BC test-count-anchor re-sweep step to remediation bursts (narrower than lesson 8/9's general cross-BC checkpoint) — motivated by the F-31/F-33/P13-F-1 recurrence in STORY-187's convergence loop | Remediation-burst discipline / story-writer-test-writer checklist | proposed — see DRIFT-P187-SIBLING-TESTCOUNT-SWEEP |
 | 12 | Require AC-note authors to re-read the cited test body before writing an assertion claim (an authoring checklist step) — motivated by the P16-F-1/P19-F-2/P20-F-1 recurrence in STORY-187's convergence loop | Story-writer / AC-note authoring discipline | proposed — see DRIFT-P187-AC-NOTE-TEST-VERIFICATION |
 | 14 | Introduce a wording-only severity floor (or a dedicated convergence rule for doc-only drift) so that wording-only findings do not reset the per-story adversarial clean-pass streak — motivated by STORY-187 needing 24 passes to converge, largely on doc-wording findings on a ~5k-line diff | BC-5.39.001 convergence-protocol discipline | proposed — see DRIFT-P187-WORDING-CONVERGENCE-VELOCITY; human ruling (2026-09-25) closed STORY-187 pragmatically without resolving the general question |
+| 16 | Make the whole-BC-set reverse-check sweep table (VP both directions, test citations, description vs PC/EC, line anchors, overclaims) a standard remediation-burst step, widening DF-SIBLING-SWEEP-001 per-finding scope — motivated by P2-F-04->P3-F-02 and P2-F-05->P3-F-01 recurrence in STORY-188 | Remediation-burst discipline / product-owner checklist | proposed — candidate only (<3 recurrences in-story); decide at cycle close |

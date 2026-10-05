@@ -1,7 +1,7 @@
 ---
 document_type: behavioral-contract
 level: L3
-version: "1.2"
+version: "1.3"
 status: draft
 producer: product-owner
 timestamp: 2026-09-06T00:00:00Z
@@ -14,6 +14,9 @@ capability: CAP-21
 lifecycle_status: active
 introduced: feature-s7comm
 modified:
+  - version: "1.3"
+    date: 2026-10-05
+    change: "STORY-188 pass-3 P3-F-03 (MINOR): Description and Invariant 1 no longer claim PLC Stop 'carries no multiplexed service-string field' (false — the canonical vector, research §3, carries FC + 5 reserved bytes + 1-byte length 0x09 + "P_PROGRAM"). Reworded: PLC Stop carries a length-prefixed service name (observed "P_PROGRAM") in a different layout from PLC Control (5 reserved bytes, no 0xFD, no u16 block-argument length); it is deliberately NOT decoded because the FC byte alone identifies the operation. H1 unchanged (immutable-title rule). Postcondition 3 and canonical vector row now state the length-prefixed name; consistent with BC-2.21.015 Invariant 3."
   - version: "1.2"
     date: 2026-10-04
     change: "STORY-188 pass-2 P2-F-07 (NIT): arm anchor re-cited from :385 (fn signature) to the match-arm line :416; function itself stays :385. P2-F-01 (MINOR): EC-001 reworded - FC-byte-only case is param_length == 1 (cites test_BC_2_21_016_plc_stop_classified); param_length == 0 is NoParameterBlock per BC-2.21.017 PC2 and code."
@@ -36,13 +39,17 @@ input-hash: "cf116b5"
 
 ## Description
 
-`FC == 0x29` is a dedicated PLC Stop request — unlike `0x28` (BC-2.21.015), it carries
-no multiplexed service-string field; the FC byte alone fully identifies the operation.
-This BC classifies `FC == 0x29` as `S7ClassicFunction::PlcStop` directly, with no
-further parameter-block decode required. It is packaged separately from BC-2.21.015
-specifically because it does **not** share `0x28`'s ambiguity — conflating the two into
-one BC would understate the material difference in decode complexity ADR-014 flags for
-`0x28` alone.
+`FC == 0x29` is a dedicated PLC Stop request. Unlike `0x28` (BC-2.21.015), where the
+service name selects the operation, the FC byte alone fully identifies the operation.
+The observed wire frame does carry a length-prefixed service name (canonical vector:
+`"P_PROGRAM"`) after the FC byte, but in a different layout from PLC Control (5 reserved
+bytes, no `0xFD` marker, no `u16` block-argument length), and that name is deliberately
+NOT decoded — it carries no additional signal beyond the FC byte. This BC classifies
+`FC == 0x29` as `S7ClassicFunction::PlcStop` directly, with no further parameter-block
+decode. It is packaged separately from BC-2.21.015 specifically because it does **not**
+share `0x28`'s service-name ambiguity — conflating the two into one BC would
+understate the material difference in decode complexity ADR-014 flags for `0x28`
+alone, and would wrongly apply `0x28`'s layout to `0x29`.
 
 ## Preconditions
 
@@ -54,13 +61,16 @@ one BC would understate the material difference in decode complexity ADR-014 fla
 
 1. The frame is classified `S7ClassicFunction::PlcStop`.
 2. No sub-operation decode is required or attempted — `0x29` has exactly one meaning.
-3. **Wire layout differs from PLC Control (`0x28`)** (canonical vector, `.factory/research/s7comm-canonical-fc-vectors.md` §3, DF-CANONICAL-FRAME-HOLDOUT-001): a PLC Stop parameter block carries 5 reserved bytes after the FC byte, NO `0xFD` marker and NO `u16` block-argument length (the layout BC-2.21.015's service decode relies on). Classification is therefore **by FC byte only**; the BC-2.21.015 `0x28` layout/decode is never applied to `0x29`.
+3. **Wire layout differs from PLC Control (`0x28`)** (canonical vector, `.factory/research/s7comm-canonical-fc-vectors.md` §3, DF-CANONICAL-FRAME-HOLDOUT-001): a PLC Stop parameter block carries 5 reserved bytes after the FC byte, NO `0xFD` marker and NO `u16` block-argument length (the layout BC-2.21.015's service decode relies on), followed by a 1-byte service-name length (`0x09`) and the ASCII name `"P_PROGRAM"` (canonical frame: `29 00 00 00 00 00 09 50 5F 50 52 4F 47 52 41 4D`, 16 bytes). Classification is therefore **by FC byte only**; the length-prefixed name is not decoded, and the BC-2.21.015 `0x28` layout/decode is never applied to `0x29`.
 
 ## Invariants
 
 1. **No ambiguity, no decode**: `PlcStop` is the simplest classification arm in this
-   group — a direct FC-to-variant mapping — precisely because the real protocol
-   affords it that simplicity, unlike `0x28`.
+   group — a direct FC-to-variant mapping. The frame does carry a length-prefixed
+   service name (observed `"P_PROGRAM"`) in a layout different from `0x28`'s, but the
+   FC byte alone identifies the operation, so that name is deliberately not decoded
+   (and `0x28`'s decode is never applied to `0x29`); there is no service-name
+   ambiguity to resolve, unlike `0x28`.
 
 ## Edge Cases
 
@@ -73,6 +83,7 @@ one BC would understate the material difference in decode complexity ADR-014 fla
 | `data[header_len]` | Expected classification | Category |
 |---|---|---|
 | `0x29` | `PlcStop` | happy-path |
+| `0x29 00 00 00 00 00 09 50 5F 50 52 4F 47 52 41 4D` (canonical PLC Stop parameter block, 16 bytes; research §3) | `PlcStop` (service name not decoded) | canonical vector (`story_188::canonical::test_BC_2_21_016_canonical_plc_stop_classified`) |
 
 ## Verification Properties
 
@@ -98,7 +109,7 @@ anchored to BC-2.21.017.)
 
 ## Architecture Anchors
 
-- `src/analyzer/s7comm.rs:416` — `0x29 => S7ClassicFunction::PlcStop` arm of `classify_job_ack_function` (function at `src/analyzer/s7comm.rs:385`, `pub fn classify_job_ack_function(data, header_len, param_length) -> S7ClassicFunction`); deliberately does NOT call `decode_plc_control_service` (:462) because the layouts differ; `PlcStop` variant at :339 carries no payload
+- `src/analyzer/s7comm.rs:416` — `0x29 => S7ClassicFunction::PlcStop` arm of `classify_job_ack_function` (function at `src/analyzer/s7comm.rs:385`, `pub fn classify_job_ack_function(data, header_len, param_length) -> S7ClassicFunction`); deliberately does NOT call `decode_plc_control_service` (:462) because the layouts differ; the `PlcStop` variant of the `S7ClassicFunction` enum at :339 carries no payload
 - `tests/s7comm_analyzer_tests.rs` `mod story_188` — verifying tests: `test_BC_2_21_016_plc_stop_classified`, `story_188::canonical::test_BC_2_21_016_canonical_plc_stop_classified` (canonical PLC Stop Job — framing layout per `.factory/research/s7comm-canonical-fc-vectors.md` §3, DF-CANONICAL-FRAME-HOLDOUT-001)
 
 ## Story Anchor

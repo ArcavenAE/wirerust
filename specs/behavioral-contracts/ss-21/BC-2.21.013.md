@@ -1,7 +1,7 @@
 ---
 document_type: behavioral-contract
 level: L3
-version: "1.2"
+version: "1.3"
 status: draft
 producer: product-owner
 timestamp: 2026-09-06T00:00:00Z
@@ -14,6 +14,9 @@ capability: CAP-21
 lifecycle_status: active
 introduced: feature-s7comm
 modified:
+  - version: "1.3"
+    date: 2026-10-05
+    change: "STORY-188 pass-3 P3-F-02 (MAJOR): Verification Properties and VP Anchors no longer deny a VP — VP-054 (proptest P1, Download/Upload structural disjointness; registered VP-INDEX v2.55, source_bc BC-2.21.013/BC-2.21.014) is named, matching the already-cited `proptest_vp054_download_upload_structural_disjointness`. Pass-3 sweep: VP-054 status noted draft/skeleton ('full run in STORY-194')."
   - version: "1.2"
     date: 2026-10-04
     change: "STORY-188 pass-2 P2-F-07 (NIT): arm anchor re-cited from :385 (fn signature) to the match-arm line :406-408; function itself stays :385. P2-F-08 (NIT): Invariant 1 "eight-apart" -> "adjacent in FC-space (0x1A-0x1C vs 0x1D-0x1F)"."
@@ -99,8 +102,15 @@ build its sequence correlation.
 
 ## Verification Properties
 
-(No independent VP-NNN — table-driven unit tests for the three FC values; totality
-covered by the shared match anchored to BC-2.21.017.)
+VP-054 (proptest P1) — Download/Upload structural disjointness (registered in VP-INDEX
+v2.55; `source_bc` BC-2.21.013, BC-2.21.014; status draft). Verified by
+`story_188::vp054::proptest_vp054_download_upload_structural_disjointness` (2000 cases
+over `any::<u8>()`: a Download variant iff FC in `0x1A..=0x1C`, an Upload variant iff FC in
+`0x1D..=0x1F`, one-to-one, never both; the story_188 harness is a skeleton, the full
+non-vacuous run is deferred to STORY-194). Complemented by table-driven unit tests for
+the three FC values (`test_BC_2_21_013_download_triad_classified_independently`);
+overall FC-match totality is covered by the shared match anchored to BC-2.21.017
+(VP-052).
 
 ## Traceability
 
@@ -132,7 +142,8 @@ STORY-188
 
 ## VP Anchors
 
-(None dedicated.)
+- VP-054 (proptest P1) — Program-Download / Upload Structural Disjointness; registered
+  VP-INDEX v2.55, traces BC-2.21.013, BC-2.21.014 (draft)
 
 ## Purity Classification
 

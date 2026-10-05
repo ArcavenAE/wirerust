@@ -1,7 +1,7 @@
 ---
 document_type: behavioral-contract
 level: L3
-version: "1.2"
+version: "1.3"
 status: draft
 producer: product-owner
 timestamp: 2026-09-06T00:00:00Z
@@ -14,6 +14,9 @@ capability: CAP-21
 lifecycle_status: active
 introduced: feature-s7comm
 modified:
+  - version: "1.3"
+    date: 2026-10-05
+    change: "STORY-188 pass-3 sweep (no P3-F finding): Invariant 3 now cross-references the FC 0x29 canonical vector (BC-2.21.016, P3-F-03) — the string "P_PROGRAM" also appears as a length-prefixed service name inside a PLC Stop frame, where it is deliberately not decoded; Verification Properties no longer implies a proptest exists for service-string matching (none in STORY-188; candidate only)."
   - version: "1.2"
     date: 2026-10-04
     change: "STORY-188 pass-2 P2-F-07 (NIT): arm anchor re-cited from :385 (fn signature) to the match-arm line :412; function itself stays :385. P2-F-04 (NIT): VP-INDEX.md version ref v2.48 -> v2.55."
@@ -86,7 +89,11 @@ services.
    additional PI-service parameter bytes beyond the service-name string); B2's T0858
    (Change Operating Mode) emission call-site is responsible for any further
    sub-operation disambiguation it needs — this BC guarantees only that the service
-   name itself is correctly extracted.
+   name itself is correctly extracted. Note the same ASCII string `"P_PROGRAM"` also
+   appears as a length-prefixed service name in a PLC Stop (FC `0x29`, BC-2.21.016)
+   frame; that frame is classified `PlcStop` by its FC byte alone and the
+   service-name decode defined here is NEVER applied to it (different layout:
+   5 reserved bytes, no `0xFD`, no `u16` block-argument length).
 
 ## Edge Cases
 
@@ -113,8 +120,9 @@ services.
 ## Verification Properties
 
 (No independent VP-NNN — table-driven unit tests for the five-string exact-match
-decode plus the unrecognized fallback; proptest P1 candidate for byte-string
-fuzz-matching totality, mirroring the area-code totality treatment in BC-2.21.012.)
+decode plus the unrecognized fallback (`test_BC_2_21_015_*` in `mod story_188`); a
+proptest P1 for byte-string matching totality is a candidate only — none exists in
+STORY-188 and none is registered in VP-INDEX v2.55.)
 
 ## Traceability
 

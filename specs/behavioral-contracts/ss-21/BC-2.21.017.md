@@ -1,7 +1,7 @@
 ---
 document_type: behavioral-contract
 level: L3
-version: "1.2"
+version: "1.3"
 status: draft
 producer: product-owner
 timestamp: 2026-09-06T00:00:00Z
@@ -14,6 +14,9 @@ capability: CAP-21
 lifecycle_status: active
 introduced: feature-s7comm
 modified:
+  - version: "1.3"
+    date: 2026-10-05
+    change: "STORY-188 pass-3 sweep (no P3-F finding): added EC-005 for the defensive unsliceable-block `NoParameterBlock` return (implemented in `classify_job_ack_function`, unreachable behind BC-2.21.009 bounds check, asserted not-NoParameterBlock-iff-param_length>0 by the STORY-188 Kani harness); Verification Properties now states proof scope accurately (deterministic 256-value enumeration test + 2000-case proptest skeleton, full run deferred to STORY-194; VP-052 status draft)."
   - version: "1.2"
     date: 2026-10-04
     change: "STORY-188 pass-2 P2-F-07 (NIT): arm anchor re-cited from :385 (fn signature) to the match-arm line :417; function itself stays :385. P2-F-02 (MINOR): PC2/EC-003 Setup-Communication-Ack param_length==0 claim removed (disproved by canonical cnblogs Ack_Data, param_length 8); replaced with bare Ack_Data empty-parameter-block example. P2-F-04 (NIT): Verification Properties VP-NNN -> VP-052 (proptest P1); VP-INDEX version ref v2.48 -> v2.55."
@@ -95,6 +98,7 @@ distinct condition from "FC byte present but unrecognized."
 | EC-002 | `data[header_len] == 0x06` (a plausible but unassigned FC value adjacent to Read/Write Var) | `Unrecognized(0x06)` — no proximity-based guessing |
 | EC-003 | `param_length == 0` on a bare Ack_Data (ROSCTR 0x03) with an empty parameter block (e.g. STORY-187's `minimal_ack_data_pdu` test frame; NOT a Setup Communication Ack_Data, whose canonical frame has `param_length` 8 → `SetupCommunication`) | `NoParameterBlock` — non-anomalous for an Ack_Data carrying no parameters |
 | EC-004 | `data[header_len] == 0xFF` | `Unrecognized(0xFF)` |
+| EC-005 | `param_length >= 1` but `header_len + param_length` overflows `usize` or exceeds `data.len()` (caller bounds-check BC-2.21.009 violated — unreachable behind `s7comm_bounds_ok`) | Defensive: `NoParameterBlock` is returned rather than panicking (`checked_add` / `data.get(header_len..end)` in `classify_job_ack_function`); no out-of-bounds slice is ever constructed |
 
 ## Canonical Test Vectors
 
@@ -108,7 +112,7 @@ distinct condition from "FC byte present but unrecognized."
 
 | Property | Proof Method |
 |----------|--------------|
-| The full Job/Ack_Data FC classification match (BC-2.21.010 through this BC) is total and non-overlapping over all 256 `u8` values plus the `param_length == 0` case | VP-052 (proptest P1) (mirrors VP-046's `classify_frame_format` totality treatment) |
+| The full Job/Ack_Data FC classification match (BC-2.21.010 through this BC) is total and non-overlapping over all 256 `u8` values plus the `param_length == 0` case | VP-052 (proptest P1, status draft) (mirrors VP-046's `classify_frame_format` totality treatment). Evidence in STORY-188: `test_BC_2_21_017_fc_classification_total_over_all_256_values` (deterministic enumeration of all 256 FC bytes under both Job and AckData header lengths against an independent oracle) and `story_188::vp052::proptest_vp052_fc_classification_totality` (2000 sampled cases; a skeleton — the full non-vacuous run is deferred to STORY-194; the Userdata-group half of VP-052 is STORY-189 scope) |
 
 ## Traceability
 
