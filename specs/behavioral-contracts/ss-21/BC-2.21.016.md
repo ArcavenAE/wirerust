@@ -1,7 +1,7 @@
 ---
 document_type: behavioral-contract
 level: L3
-version: "1.3"
+version: "1.4"
 status: draft
 producer: product-owner
 timestamp: 2026-09-06T00:00:00Z
@@ -14,9 +14,12 @@ capability: CAP-21
 lifecycle_status: active
 introduced: feature-s7comm
 modified:
+  - version: "1.4"
+    date: 2026-10-05
+    change: "STORY-188 pass-4 P4-F-03 (MINOR) sweep: frontmatter YAML validity - unescaped inner double quotes in a prior modified-entry change string (which made the frontmatter unparseable) converted to single quotes; no semantic change. No change to Preconditions/Postconditions/Invariants/Edge Cases."
   - version: "1.3"
     date: 2026-10-05
-    change: "STORY-188 pass-3 P3-F-03 (MINOR): Description and Invariant 1 no longer claim PLC Stop 'carries no multiplexed service-string field' (false — the canonical vector, research §3, carries FC + 5 reserved bytes + 1-byte length 0x09 + "P_PROGRAM"). Reworded: PLC Stop carries a length-prefixed service name (observed "P_PROGRAM") in a different layout from PLC Control (5 reserved bytes, no 0xFD, no u16 block-argument length); it is deliberately NOT decoded because the FC byte alone identifies the operation. H1 unchanged (immutable-title rule). Postcondition 3 and canonical vector row now state the length-prefixed name; consistent with BC-2.21.015 Invariant 3."
+    change: "STORY-188 pass-3 P3-F-03 (MINOR): Description and Invariant 1 no longer claim PLC Stop 'carries no multiplexed service-string field' (false — the canonical vector, research §3, carries FC + 5 reserved bytes + 1-byte length 0x09 + 'P_PROGRAM'). Reworded: PLC Stop carries a length-prefixed service name (observed 'P_PROGRAM') in a different layout from PLC Control (5 reserved bytes, no 0xFD, no u16 block-argument length); it is deliberately NOT decoded because the FC byte alone identifies the operation. H1 unchanged (immutable-title rule). Postcondition 3 and canonical vector row now state the length-prefixed name; consistent with BC-2.21.015 Invariant 3."
   - version: "1.2"
     date: 2026-10-04
     change: "STORY-188 pass-2 P2-F-07 (NIT): arm anchor re-cited from :385 (fn signature) to the match-arm line :416; function itself stays :385. P2-F-01 (MINOR): EC-001 reworded - FC-byte-only case is param_length == 1 (cites test_BC_2_21_016_plc_stop_classified); param_length == 0 is NoParameterBlock per BC-2.21.017 PC2 and code."

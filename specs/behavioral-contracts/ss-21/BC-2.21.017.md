@@ -1,7 +1,7 @@
 ---
 document_type: behavioral-contract
 level: L3
-version: "1.3"
+version: "1.4"
 status: draft
 producer: product-owner
 timestamp: 2026-09-06T00:00:00Z
@@ -14,6 +14,9 @@ capability: CAP-21
 lifecycle_status: active
 introduced: feature-s7comm
 modified:
+  - version: "1.4"
+    date: 2026-10-05
+    change: "STORY-188 pass-4 P4-F-01 (spec part): EC-005 now cites `test_BC_2_21_017_unsliceable_parameter_block_returns_no_parameter_block` and states the VP-051 Kani harness (`story_188::vp051_kani::verify_classify_job_ack_function_param_slicing_safe`) does NOT cover the unsliceable-block path (it returns early unless `s7comm_bounds_ok`). CORRECTION to the v1.3 row below: it said the defensive `NoParameterBlock` return is 'asserted ... by the STORY-188 Kani harness' - that is wrong; the return is covered only by the named unit test, and the harness proves slicing safety solely on bounds-ok inputs. Historical v1.3 row left unaltered."
   - version: "1.3"
     date: 2026-10-05
     change: "STORY-188 pass-3 sweep (no P3-F finding): added EC-005 for the defensive unsliceable-block `NoParameterBlock` return (implemented in `classify_job_ack_function`, unreachable behind BC-2.21.009 bounds check, asserted not-NoParameterBlock-iff-param_length>0 by the STORY-188 Kani harness); Verification Properties now states proof scope accurately (deterministic 256-value enumeration test + 2000-case proptest skeleton, full run deferred to STORY-194; VP-052 status draft)."
@@ -98,7 +101,7 @@ distinct condition from "FC byte present but unrecognized."
 | EC-002 | `data[header_len] == 0x06` (a plausible but unassigned FC value adjacent to Read/Write Var) | `Unrecognized(0x06)` — no proximity-based guessing |
 | EC-003 | `param_length == 0` on a bare Ack_Data (ROSCTR 0x03) with an empty parameter block (e.g. STORY-187's `minimal_ack_data_pdu` test frame; NOT a Setup Communication Ack_Data, whose canonical frame has `param_length` 8 → `SetupCommunication`) | `NoParameterBlock` — non-anomalous for an Ack_Data carrying no parameters |
 | EC-004 | `data[header_len] == 0xFF` | `Unrecognized(0xFF)` |
-| EC-005 | `param_length >= 1` but `header_len + param_length` overflows `usize` or exceeds `data.len()` (caller bounds-check BC-2.21.009 violated — unreachable behind `s7comm_bounds_ok`) | Defensive: `NoParameterBlock` is returned rather than panicking (`checked_add` / `data.get(header_len..end)` in `classify_job_ack_function`); no out-of-bounds slice is ever constructed |
+| EC-005 | `param_length >= 1` but `header_len + param_length` overflows `usize` or exceeds `data.len()` (caller bounds-check BC-2.21.009 violated — unreachable behind `s7comm_bounds_ok`) | Defensive: `NoParameterBlock` is returned rather than panicking (`checked_add` / `data.get(header_len..end)` in `classify_job_ack_function`); no out-of-bounds slice is ever constructed. Traced to `test_BC_2_21_017_unsliceable_parameter_block_returns_no_parameter_block` (end beyond `data.len()`, `usize` overflow, partial block). The VP-051 Kani harness does NOT cover this path: it returns early unless `s7comm_bounds_ok` holds, so this unreachable-behind-bounds branch is verified only by that unit test. |
 
 ## Canonical Test Vectors
 

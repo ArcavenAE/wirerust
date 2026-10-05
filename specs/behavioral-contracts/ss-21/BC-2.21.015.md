@@ -1,7 +1,7 @@
 ---
 document_type: behavioral-contract
 level: L3
-version: "1.3"
+version: "1.4"
 status: draft
 producer: product-owner
 timestamp: 2026-09-06T00:00:00Z
@@ -14,9 +14,12 @@ capability: CAP-21
 lifecycle_status: active
 introduced: feature-s7comm
 modified:
+  - version: "1.4"
+    date: 2026-10-05
+    change: "STORY-188 pass-4 P4-F-03 (MINOR) sweep: frontmatter YAML validity - unescaped inner double quotes in a prior modified-entry change string (which made the frontmatter unparseable) converted to single quotes; no semantic change. No change to Preconditions/Postconditions/Invariants/Edge Cases."
   - version: "1.3"
     date: 2026-10-05
-    change: "STORY-188 pass-3 sweep (no P3-F finding): Invariant 3 now cross-references the FC 0x29 canonical vector (BC-2.21.016, P3-F-03) — the string "P_PROGRAM" also appears as a length-prefixed service name inside a PLC Stop frame, where it is deliberately not decoded; Verification Properties no longer implies a proptest exists for service-string matching (none in STORY-188; candidate only)."
+    change: "STORY-188 pass-3 sweep (no P3-F finding): Invariant 3 now cross-references the FC 0x29 canonical vector (BC-2.21.016, P3-F-03) — the string 'P_PROGRAM' also appears as a length-prefixed service name inside a PLC Stop frame, where it is deliberately not decoded; Verification Properties no longer implies a proptest exists for service-string matching (none in STORY-188; candidate only)."
   - version: "1.2"
     date: 2026-10-04
     change: "STORY-188 pass-2 P2-F-07 (NIT): arm anchor re-cited from :385 (fn signature) to the match-arm line :412; function itself stays :385. P2-F-04 (NIT): VP-INDEX.md version ref v2.48 -> v2.55."

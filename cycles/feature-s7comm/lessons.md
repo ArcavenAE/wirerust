@@ -249,6 +249,13 @@ _(none recorded this cycle)_
     whole-BC-set reverse-check table as a standard remediation-burst step).
     _Discovered: STORY-188 per-story adversarial pass 3, 2026-10-05._
 
+17. **[process-gap] No automated YAML frontmatter validation for BC files** — BC-2.21.009 carried an invalid YAML frontmatter
+    (trailing comma, P4-F-03) that survived three adversary passes; the product-owner's full ss-21 frontmatter parse check
+    then found 4 more invalid frontmatters (BC-2.21.010/013/015/016: unescaped inner double quotes in `change:` strings),
+    41/41 parse after fix. Root cause: nothing machine-checks BC frontmatter parseability; reviewers read the prose only.
+    Disposition: **not yet codified**; candidate for a CI/`bin` check (parse every spec frontmatter block); decide at cycle close.
+    _Discovered: STORY-188 per-story adversarial pass 4, 2026-10-05._
+
 ## Infrastructure-Level
 
 1. **[infra] Nested-subagent messaging deadlock** — pr-manager (dispatched as a subagent for
@@ -308,3 +315,4 @@ _(none recorded this cycle)_
 | 12 | Require AC-note authors to re-read the cited test body before writing an assertion claim (an authoring checklist step) — motivated by the P16-F-1/P19-F-2/P20-F-1 recurrence in STORY-187's convergence loop | Story-writer / AC-note authoring discipline | proposed — see DRIFT-P187-AC-NOTE-TEST-VERIFICATION |
 | 14 | Introduce a wording-only severity floor (or a dedicated convergence rule for doc-only drift) so that wording-only findings do not reset the per-story adversarial clean-pass streak — motivated by STORY-187 needing 24 passes to converge, largely on doc-wording findings on a ~5k-line diff | BC-5.39.001 convergence-protocol discipline | proposed — see DRIFT-P187-WORDING-CONVERGENCE-VELOCITY; human ruling (2026-09-25) closed STORY-187 pragmatically without resolving the general question |
 | 16 | Make the whole-BC-set reverse-check sweep table (VP both directions, test citations, description vs PC/EC, line anchors, overclaims) a standard remediation-burst step, widening DF-SIBLING-SWEEP-001 per-finding scope — motivated by P2-F-04->P3-F-02 and P2-F-05->P3-F-01 recurrence in STORY-188 | Remediation-burst discipline / product-owner checklist | proposed — candidate only (<3 recurrences in-story); decide at cycle close |
+| 17 | Add an automated YAML frontmatter parse check for BC/spec files (CI or `bin` check) — motivated by BC-2.21.009 trailing-comma defect surviving 3 passes and 4 further invalid frontmatters found in ss-21 | Spec-artifact validation tooling | proposed — candidate only; decide at cycle close |

@@ -3,7 +3,7 @@
   "story": "STORY-188",
   "cycle": "feature-s7comm",
   "criterion": "BC-5.39.001",
-  "passes_total": 3,
+  "passes_total": 4,
   "passes_clean": [],
   "closing_trio": [],
   "last_classification": "HAS_FINDINGS",
@@ -255,6 +255,67 @@
         "861c7f0b",
         "cc8dbf22"
       ]
+    },
+    "pass_4": {
+      "classification": "HAS_FINDINGS",
+      "context": "fresh context, Phase A attestation valid at branch cc8dbf22 / develop 17b00031",
+      "pass3_verification": "all 7 pass-3 findings + whole-BC-set sweep fixes VERIFIED-FIXED except STORY EC-012 (new P4-F-01); no logic defects found (implementation converged)",
+      "counts": {
+        "MAJOR": 0,
+        "MINOR": 5,
+        "NIT": 2
+      },
+      "items": [
+        {
+          "id": "P4-F-01",
+          "severity": "MINOR",
+          "summary": "STORY EC-012 false Kani-coverage claim and untested defensive NoParameterBlock path",
+          "disposition": "fixed",
+          "note": "new test test_BC_2_21_017_unsliceable_parameter_block_returns_no_parameter_block"
+        },
+        {
+          "id": "P4-F-02",
+          "severity": "MINOR",
+          "summary": "stale VP-051 harness doc claiming removed assertion",
+          "disposition": "fixed"
+        },
+        {
+          "id": "P4-F-03",
+          "severity": "MINOR",
+          "summary": "BC-2.21.009 frontmatter invalid YAML (trailing comma)",
+          "disposition": "fixed"
+        },
+        {
+          "id": "P4-F-04",
+          "severity": "MINOR",
+          "summary": "BC-2.21.008 EC-007/EC-008 test citations mismatched to scenario",
+          "disposition": "fixed"
+        },
+        {
+          "id": "P4-F-05",
+          "severity": "MINOR",
+          "summary": "research doc \"10-byte Job/Ack header\"",
+          "disposition": "fixed",
+          "note": "offset correction + dated note in research/s7comm-canonical-fc-vectors.md"
+        },
+        {
+          "id": "P4-F-06",
+          "severity": "NIT",
+          "summary": "src doc anchors",
+          "disposition": "fixed"
+        },
+        {
+          "id": "P4-F-07",
+          "severity": "NIT",
+          "summary": "CHANGELOG \"bounds-valid\" precision",
+          "disposition": "fixed"
+        }
+      ],
+      "remediation_commits": [
+        "7b9c5ab1",
+        "539645f1"
+      ],
+      "extra_defects": "product-owner full ss-21 YAML frontmatter parse check found 4 more invalid frontmatters (BC-2.21.010/013/015/016 unescaped inner double quotes in change: strings) - fixed; 41/41 parse"
     }
   },
   "formal_verification": {
@@ -267,23 +328,24 @@
     "closes": "PRF-005 (carry-forward; RESOLVED in STORY-188 branch, pending merge)"
   },
   "test_suite": {
-    "full_suite": "2836 passed / 0 failed",
+    "full_suite": "2837 passed / 0 failed",
     "clippy_fmt_green_doc_tense": "clean"
   },
   "merge_status": "NOT_YET_MERGED",
   "branch": "feature/STORY-188-s7comm-function-code-classification",
   "worktree": ".worktrees/STORY-188",
-  "head": "cc8dbf22",
+  "head": "539645f1",
   "base": "develop 17b00031",
   "timestamp": "2026-10-05T00:00:00Z",
   "producer": "state-manager",
-  "note": "Pass 3 remediated (plus whole-BC-set reverse-check sweep); pass 4 (fresh context) is next. Supplement to the eventual convergence-report.md.",
+  "note": "Pass 4 remediated; pass 5 (fresh context) is next. Supplement to the eventual convergence-report.md.",
   "spec_versions": {
-    "BC-2.21.008": "v1.11",
-    "BC-2.21.009": "v1.10",
-    "BC-2.21.010..017": "v1.3",
-    "BC-INDEX": "v2.38.21",
-    "STORY-188": "v1.5 (input-hash 3ae34a3)"
+    "BC-2.21.008": "v1.12",
+    "BC-2.21.009": "v1.11",
+    "BC-2.21.010/013/015/016/017": "v1.4",
+    "BC-2.21.011/012/014": "v1.3",
+    "BC-INDEX": "v2.38.22",
+    "STORY-188": "v1.6 (input-hash 2191d38)"
   },
   "reverse_check_sweep": {
     "scope": "BC-2.21.008..017 (VP both directions, test citations, description vs PC/EC, line anchors, overclaims)",
@@ -300,5 +362,5 @@
       "test-writer: EC citations disambiguated in story_188 test docs (two mis-attributions ~5593/~5863)"
     ]
   },
-  "process_gap": "Sibling-sweep misses recurred in passes 2 and 3 (lessons.md item 16); lesson candidate, decide at cycle close"
+  "process_gap": "Sibling-sweep misses recurred in passes 2 and 3 (lessons.md item 16); no automated BC frontmatter YAML validation (lessons.md item 17); lesson candidates, decide at cycle close"
 }

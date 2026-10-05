@@ -22,7 +22,7 @@ The precedent test-vector source is cnblogs "西门子S7通讯协议引用整理
 - Hex shown as posted includes the TPKT (`03 00 ...`) + COTP (`02 F0 80`) prefix.
 - **The S7comm PDU begins at the `32` byte.** "S7 PDU offset" below is 0-based from `32`.
 - **"Parameter offset"** is 0-based from the first byte of the parameter field (the function
-  code), i.e. S7 PDU offset 10 for a 10-byte Job/Ack header.
+  code), i.e. S7 PDU offset 10 for a 10-byte Job/Userdata header (offset 12 for Ack_Data's 12-byte header; a bare Ack carries no parameter field).
 - S7comm Job header (ROSCTR 0x01) = 10 bytes:
   `32 | rosctr(01) | redundancy_id(2) | pdu_ref(2) | param_len(2 BE) | data_len(2 BE)`,
   then the parameter field begins.
@@ -217,3 +217,7 @@ URLs + retrieval date; training data used only to annotate field names.
 - gmiru TLS cert mismatch blocked direct fetch; Wayback blocked; gmiru corroboration is therefore
   via perplexity synthesis of gmiru text, not a direct page capture.
 - 0x28 `0xFD` reserved byte and 0x29 5-byte reserved layout: one byte-exact source each.
+
+---
+
+**Correction note (2026-10-05, STORY-188 pass-4 P4-F-05):** the Convention section previously said the parameter field begins at "S7 PDU offset 10 for a 10-byte Job/Ack header". Ack (0x02) and Ack_Data (0x03) headers are 12 bytes (Error Class + Error Code at offsets 10-11; BC-2.21.008), so the parameter field starts at offset 12 for Ack_Data (a bare Ack carries none); only Job/Userdata use a 10-byte header. Sweep of this doc found no other "Ack" + "10-byte" statement.

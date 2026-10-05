@@ -4,7 +4,7 @@ level: ops
 story_id: STORY-188
 title: "S7comm Job/Ack_Data Function-Code Classification: Setup Comm, Read/Write Var, Download/Upload Triads, PLC Control, PLC Stop"
 epic_id: E-23
-version: "1.5"
+version: "1.6"
 status: ready
 producer: story-writer
 timestamp: 2026-09-24T00:00:00Z
@@ -39,7 +39,7 @@ inputs:
   - docs/adr/0014-s7comm-iso-on-tcp-stream-dispatch-and-parser-design.md
   - .factory/research/s7comm-mitre-ics-tagging.md
   - .factory/research/s7comm-canonical-fc-vectors.md
-input-hash: "3ae34a3"
+input-hash: "2191d38"
 ---
 
 > **tdd_mode:** `strict` — full TDD Iron Law enforced.
@@ -208,7 +208,9 @@ the Ack/Ack_Data error-observation record (AC-188-010).
 - Defensive: if `param_length >= 1` but the parameter block cannot be sliced (offset
   arithmetic overflows or exceeds `data.len()`; unreachable behind `s7comm_bounds_ok`),
   the classifier returns `NoParameterBlock` rather than panicking (traces to BC-2.21.017
-  Edge Case EC-005)
+  Edge Case EC-005). **Tests:**
+  `test_BC_2_21_017_unsliceable_parameter_block_returns_no_parameter_block` (unit test; NOT
+  covered by the VP-051 Kani harness)
 - No `Finding` is emitted for either case at this layer (traces to BC-2.21.017
   postcondition 3)
 - **Test:** `test_BC_2_21_017_unrecognized_fc_and_empty_parameter_block`
@@ -461,7 +463,7 @@ in STORY-194.
 | EC-009 | BC-2.21.008 EC-009 (F-06 ruling 2026-10-04) | Ack/Ack_Data header parses `Some` (>= 12 bytes) but declared `header_len + param_length + data_length` exceeds the available bytes (BC-2.21.009 bounds check FAILS) | T0814 malformed-header finding emitted; NO error observation recorded (neither list nor count map); no FC classification attempted. Test: `test_BC_2_21_008_bounds_failing_ack_data_records_no_ack_error_observation` |
 | EC-010 | BC-2.21.008 postcondition 4 (human ruling 2 2026-10-04) | More than `MAX_S7_ACK_ERROR_OBSERVATIONS` (1024) Ack/Ack_Data observations, or a histogram key repeated beyond the list cap | List holds only the first 1024; `ack_error_observations_dropped` increments (saturating) for each beyond; the `(rosctr, error_class, error_code)` count map keeps counting exactly past the cap. Tests: `..._bounded_by_cap_with_dropped_count`, `..._histogram_counts_beyond_list_cap` |
 | EC-011 | BC-2.21.012 postcondition 3 (F-09) | Write Var parameter block shorter than 14 bytes (11/12/13) or syntax id != `0x10` | Placeholder `WriteVar(Unrecognized(0xFF))`; exactly 14 bytes with syntax id `0x10` decodes the area byte at parameter offset 10. Test: `test_BC_2_21_012_write_var_descriptor_length_boundary_11_12_13_14` |
-| EC-012 | BC-2.21.017 EC-005 (pass-3 propagation) | `param_length >= 1` but `header_len + param_length` overflows `usize` or exceeds `data.len()` (BC-2.21.009 bounds check violated by the caller; unreachable behind `s7comm_bounds_ok`) | Defensive `NoParameterBlock` returned (via `checked_add` / `data.get`); no panic and no out-of-bounds slice. Covered by the VP-051 Kani harness (not-`NoParameterBlock` iff `param_length > 0` on bounds-ok inputs) |
+| EC-012 | BC-2.21.017 EC-005 (pass-3 propagation) | `param_length >= 1` but `header_len + param_length` overflows `usize` or exceeds `data.len()` (BC-2.21.009 bounds check violated by the caller; unreachable behind `s7comm_bounds_ok`) | Defensive `NoParameterBlock` returned (via `checked_add` / `data.get`); no panic and no out-of-bounds slice. Covered by unit test `test_BC_2_21_017_unsliceable_parameter_block_returns_no_parameter_block`, NOT by Kani (the VP-051 harness returns early unless `s7comm_bounds_ok`, so it never reaches this path) |
 
 ## Token Budget Estimate
 
@@ -539,6 +541,7 @@ Extracted from `docs/adr/0014-s7comm-iso-on-tcp-stream-dispatch-and-parser-desig
 
 | Version | Date | Author | Change |
 |---------|------|--------|--------|
+| 1.6 | 2026-10-05 | story-writer | STORY-188 per-story adversarial PASS-4 remediation (P4-F-01 MINOR plus propagation of BC-2.21.008 v1.12 and BC-2.21.017 v1.4). P4-F-01 — EC-012 no longer claims the VP-051 Kani harness covers the unsliceable-block `NoParameterBlock` path (the harness returns early unless `s7comm_bounds_ok`); it is now covered by unit test `test_BC_2_21_017_unsliceable_parameter_block_returns_no_parameter_block`, which is also cited in AC-188-008's defensive bullet. Propagation — BC-2.21.008 v1.12 swapped EC-007/EC-008 test citations; this story's EC-007/EC-008 rows cite no tests, so no row change was needed. Test counts unchanged (the new test is a BC-2.21.017 unit test covered by the existing `test_BC_2_21_017_*` wildcard; BC-2.21.008 stays at eleven). Points unchanged (8). |
 | 1.5 | 2026-10-05 | story-writer | STORY-188 per-story adversarial PASS-3 remediation (P3-F-07 plus propagation of BC amendments BC-2.21.008 v1.11, BC-2.21.009 v1.10, BC-2.21.010..017 v1.3). P3-F-07 (NIT) — AC-188-011 now notes the Setup Communication Ack_Data vector is cited in BC-2.21.008 Canonical Test Vectors (not in the research doc, which holds Write Var, PLC Control, PLC Stop, Read Var only). Propagation — AC-188-007 retitled/reworded: PLC Stop carries a length-prefixed service name (`"P_PROGRAM"`) in a different layout, deliberately not decoded (BC-2.21.016 v1.3); AC-188-011 PLC Stop bullet aligned; AC-188-004/005 and the VP-054 section name VP-054 as the anchored Download/Upload disjointness property (BC-013/014 now name it) and state disjointness is behavioral, arm separation by inspection; VP-051 section scope reworded to inputs passing `s7comm_bounds_ok` (unchecked-input safety from `data.get`/`checked_add` guards); VP-052 section notes skeleton + full run deferred to STORY-194; AC-188-008 gains the BC-2.21.017 EC-005 defensive `NoParameterBlock` bullet and new EC-012. Points unchanged (8). |
 | 1.4 | 2026-10-04 | story-writer | STORY-188 per-story adversarial PASS-2 remediation (P2-F-03, P2-F-05, P2-F-06, P2-F-09; propagation of BC v1.2/v1.9 amendments incl. P2-F-01, P2-F-02, P2-F-08). P2-F-06 — body BC table titles for BC-2.21.010..017 now verbatim BC H1 titles (BC-2.21.008 row verified unchanged). P2-F-03 — `test_BC_2_21_012_write_var_area_code_exhaustive_over_all_u8` relabeled "(proptest, BC-2.21.012 Invariant 1; no VP)" (VP-052 is FC/Userdata-group totality only). P2-F-09 — Purity Classification note corrected: the classification call site is new in `dispatch_classic_s7comm`, not unchanged from STORY-187. P2-F-05 — `test_BC_2_21_008_userdata_frames_record_no_ack_error_observation` added to AC-188-010 Tests (now eleven; Job/Userdata never-recorded clause), Tasks and File Structure counts updated. P2-F-01 — AC-188-007 gains BC-2.21.016 EC-001 (`param_length == 1` FC-only -> `PlcStop`; `param_length == 0` -> `NoParameterBlock`). P2-F-02 — AC-188-008 `param_length == 0` example is a bare Ack_Data (NOT Setup Communication, canonical `param_length` 8). P2-F-08 — BC-2.21.013 "adjacent in FC-space" wording confirmed in AC-188-005. Points unchanged (8). |
 | 1.3 | 2026-10-04 | story-writer | STORY-188 per-story adversarial PASS-1 remediation (F-01, F-02, F-03, F-05, F-06, F-07, F-09), human rulings 2026-10-04 recorded: (1) AC-188-010 surface = analyzer-side bounded record, NO stderr/log output (ADR-0004 flooding rationale); (2) added exact per-`(rosctr, error_class, error_code)` count map and `pdu_reference` on each observation. Changes: F-05/F-06 — AC-188-010 rewritten (removed "logged/surfaced via structured logging or diagnostic surface"; now bounded list cap 1024 + saturating dropped count + count map beyond cap + `pdu_reference`; bounds-gated per EC-009; ten tests listed); EC-009/EC-010 added. F-01 (DF-CANONICAL-FRAME-HOLDOUT-001) — new AC-188-011 citing the six `story_188::canonical::*` tests and `.factory/research/s7comm-canonical-fc-vectors.md`, public bytes as test vectors only (ADR-014 Decision 4). F-02/F-09 — AC-188-003 gains the descriptor-length rule (>=14 bytes, syntax id 0x10 at offset 4, area at offset 10) + boundary test `test_BC_2_21_012_write_var_descriptor_length_boundary_11_12_13_14` + accepted 0xFF collision (orchestrator decision: accepted residual); EC-011 added. AC-188-007 notes PLC Stop wire layout differs, FC-only classification (BC-2.21.016 PC3). F-03 — Task "Wire classify_job_ack_function into on_data" rewritten as a deliberate classification-only placeholder consumed by STORY-191/192 (no observable wiring claimed); Narrative, Architecture Mapping, Purity Classification updated. F-07 — Architecture Mapping/Purity rows (record + count map + `S7AckErrorKey`/`S7AckErrorObservation`), File Structure (new fixture `tests/fixtures/s7comm-fc-classification.pcap`, `mk_s7comm_pcap.py` builders), Tasks, Edge Cases, Token Budget (~33,500, ~17%; BC count unchanged at 9). VP-051 added to `verification_properties` with a VP-051 Kani Harness Obligation section: `story_188::vp051_kani::verify_classify_job_ack_function_param_slicing_safe` (VP-INDEX v2.55, closes PRF-005); `s7comm-canonical-fc-vectors.md` added to `inputs`. Points unchanged (8). |

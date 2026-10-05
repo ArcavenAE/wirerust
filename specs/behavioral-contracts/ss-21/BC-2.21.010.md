@@ -1,7 +1,7 @@
 ---
 document_type: behavioral-contract
 level: L3
-version: "1.3"
+version: "1.4"
 status: draft
 producer: product-owner
 timestamp: 2026-09-06T00:00:00Z
@@ -14,9 +14,12 @@ capability: CAP-21
 lifecycle_status: active
 introduced: feature-s7comm
 modified:
+  - version: "1.4"
+    date: 2026-10-05
+    change: "STORY-188 pass-4 P4-F-03 (MINOR) sweep: frontmatter YAML validity - unescaped inner double quotes in a prior modified-entry change string (which made the frontmatter unparseable) converted to single quotes; no semantic change. No change to Preconditions/Postconditions/Invariants/Edge Cases."
   - version: "1.3"
     date: 2026-10-05
-    change: "STORY-188 pass-3 P3-F-05 (NIT): EC-001 'Unrecognized-adjacent "no function code present" case' now names `S7ClassicFunction::NoParameterBlock` (per BC-2.21.017 PC2). Pass-3 sweep: Job/AckData call-site anchors corrected (~1084/~1091 -> ~1079/~1087, verified at worktree HEAD e24c6f7d); VP-052 citation clarified (VP-052 source_bc is BC-2.21.017/019/022/023; this BC is covered only via the shared FC-match totality)."
+    change: "STORY-188 pass-3 P3-F-05 (NIT): EC-001 'Unrecognized-adjacent 'no function code present' case' now names `S7ClassicFunction::NoParameterBlock` (per BC-2.21.017 PC2). Pass-3 sweep: Job/AckData call-site anchors corrected (~1084/~1091 -> ~1079/~1087, verified at worktree HEAD e24c6f7d); VP-052 citation clarified (VP-052 source_bc is BC-2.21.017/019/022/023; this BC is covered only via the shared FC-match totality)."
   - version: "1.2"
     date: 2026-10-04
     change: "STORY-188 pass-2 P2-F-07 (NIT): arm anchor re-cited from :385 (fn signature) to the match-arm line :403; function itself stays :385."

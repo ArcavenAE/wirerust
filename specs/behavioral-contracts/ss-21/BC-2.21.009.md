@@ -1,7 +1,7 @@
 ---
 document_type: behavioral-contract
 level: L3
-version: "1.10"
+version: "1.11"
 status: draft
 producer: product-owner
 timestamp: 2026-09-24T12:00:00Z
@@ -14,6 +14,9 @@ capability: CAP-21
 lifecycle_status: active
 introduced: feature-s7comm
 modified:
+  - version: "1.11"
+    date: 2026-10-05
+    change: "STORY-188 pass-4 P4-F-03 (MINOR): frontmatter YAML validity - v1.8 modified-entry trailing comma after the closing quote removed (invalid YAML). Sibling sweep: BC-2.21.009 Kani statements re-read - all already scoped to inputs passing s7comm_bounds_ok / bounded buffers; no overclaim found. No change to Preconditions/Postconditions/Invariants."
   - version: "1.10"
     date: 2026-10-05
     change: "STORY-188 pass-3 P3-F-04 (MINOR): Architecture Anchors Kani-harness claim narrowed from 'safe on any bounds-checked/unchecked input' to 'safe on any input that passes `s7comm_bounds_ok`' (the harness returns early unless `s7comm_bounds_ok`; unchecked-input safety comes from `data.get(..)` in `classify_job_ack_function` and is not proven by the harness). Pass-3 sweep: Verification Properties '(planned)' marker dropped (VP-051 registered) and proof scope stated as the bounded Kani harnesses actually registered (<=16-byte header buffers, data_len <= 3*u16::MAX, plus the STORY-188 <=32-byte classifier-slicing harness) rather than 'any data.len()'."
@@ -22,7 +25,7 @@ modified:
     change: "STORY-188 pass-2 P2-F-10 (NIT): Architecture Anchors, Stories row and Story Anchor now cross-reference STORY-188 as the story that added the Postcondition 3 recording-gating clause (bounds-failing Ack/Ack_Data records no error observation), citing story_188::vp051_kani::verify_classify_job_ack_function_param_slicing_safe and story_188::test_BC_2_21_008_bounds_failing_ack_data_records_no_ack_error_observation. Orchestrator decision: BC-2.21.009 is NOT added to STORY-188 bcs/behavioral_contracts; it remains STORY-187 contract and STORY-188 is a cross-reference only. No change to Preconditions/Postconditions/Invariants."
   - version: "1.8"
     date: 2026-10-04
-    change: "STORY-188 per-story adversarial pass 1 (F-06, orchestrator decision 2026-10-04), sibling to BC-2.21.008 v1.10: Postcondition 3 extended so the 'no downstream consumption on bounds failure' obligation explicitly covers BC-2.21.008's Ack/Ack_Data error-class/code observation recording (list and count map) — a bounds-failing Ack/Ack_Data yields the T0814 finding and no observation. Verified against src/analyzer/s7comm.rs dispatch_classic_s7comm (:1033; recording sits inside the bounds-OK branch). No change to Preconditions/Invariants/Edge Cases.",
+    change: "STORY-188 per-story adversarial pass 1 (F-06, orchestrator decision 2026-10-04), sibling to BC-2.21.008 v1.10: Postcondition 3 extended so the 'no downstream consumption on bounds failure' obligation explicitly covers BC-2.21.008's Ack/Ack_Data error-class/code observation recording (list and count map) — a bounds-failing Ack/Ack_Data yields the T0814 finding and no observation. Verified against src/analyzer/s7comm.rs dispatch_classic_s7comm (:1033; recording sits inside the bounds-OK branch). No change to Preconditions/Invariants/Edge Cases."
   - version: "1.7"
     date: 2026-09-25
     change: "STORY-187 per-story adversarial pass 13 (P13-F-1): Architecture Anchor test-count re-verification. The Architecture Anchors 'Tests anchor' entry was stale — it cited 7 tests from pass 3 (F-31), before tests added in passes 12-14. Re-grepped `tests/s7comm_analyzer_tests.rs` directly and replaced with the actual current count (12 `test_BC_2_21_009_*` functions) and the full function-name list, verified 2026-09-25 against worktree HEAD 38ff7ee1. Removed the stale 'no drift found (F-31)' claim, which no longer held. No change to Preconditions/Postconditions/Invariants/Edge Cases — Architecture Anchors traceability correction only."
