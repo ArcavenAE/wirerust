@@ -56,6 +56,66 @@ Version numbers follow [Semantic Versioning](https://semver.org/).
   carry bytes with no finding emitted (BC-2.21.003). Protocol-specific
   dispatch on the extracted `protocol_id` is out of scope for this story
   (STORY-187).
+- S7comm classic (`0x32`) header parsing and four-way `protocol_id` dispatch
+  (`src/analyzer/s7comm.rs`, STORY-187, ADR-014 Decisions 2/9): `S7commFlowState`
+  gains `session_established`, `cr_observed_dir: Option<Direction>`,
+  `classified_protocol: Option<S7Protocol>`, and the
+  `malformed_header_reported_c2s`/`_s2c` dedup flags (BC-2.21.001). `on_data`'s
+  frame dispatch now branches on `CotpHeader::protocol_id` (BC-2.21.002): a
+  Connect Request (CR) records the pending direction, and a Connect Confirm (CC)
+  marks `session_established` only when observed in the direction OPPOSITE a
+  previously-recorded CR on the same flow — a bare CR, a CC with no prior CR, an
+  out-of-order CC, and a same-direction CC all leave it `false`. The first Data
+  Transfer (DT) frame carrying a `Some(byte)` `protocol_id` sets
+  `classified_protocol` exactly once (`Some(0x32)` -> `Classic`, `Some(0x72)` ->
+  `Plus`, any other `Some(byte)` -> `Unclassified`), sticky for the life of the
+  flow; a `protocol_id: None` DT frame carries no protocol evidence and never
+  classifies, deferring classification to a later `Some(byte)` DT frame if any.
+  A new pure-core free function, `parse_s7comm_header`, extracts the classic
+  S7comm common header (ROSCTR, PDU reference, parameter/data length,
+  big-endian `u16` fields) for Job/Userdata ROSCTR values (10-byte header), and
+  the 12-byte Ack/Ack_Data extension (error class/code) for BOTH the Ack AND
+  Ack_Data ROSCTR values (2026-09-24 canonical-frame holdout ruling,
+  DF-CANONICAL-FRAME-HOLDOUT-001 — a real-world Ack_Data/Setup-Communication-
+  response parameter block only aligns at byte 12, not byte 10) — returning
+  `None` for under-length input, a defensively-rechecked non-`0x32`
+  protocol-ID byte, an unrecognized ROSCTR byte, or a truncated Ack/Ack_Data
+  (BC-2.21.004-008). Classic dissection (`parse_s7comm_header` call) fires only
+  when the current DT frame's `protocol_id == Some(0x32)` AND the flow's
+  STICKY `classified_protocol == Some(Classic)` — a flow already
+  sticky-classified `Plus`/`Unclassified` by an earlier DT frame is never
+  dissected, even on a later `0x32`-leading frame, per ADR-014 Decision 2's
+  no-misattribution guarantee. The declared `param_length`/`data_length` are
+  bounds-checked against the bytes actually available via a new pure,
+  public (`pub fn`) helper, `s7comm_bounds_ok(header: &S7commHeader, data_len:
+  usize) -> bool` (BC-2.21.009), before any parameter/data-block slice is
+  attempted — the same helper the VP-051 Kani harness calls directly.
+  Malformed-header conditions (parse failure or bounds-check failure) emit one
+  T0814 (Anomaly/Possible/Medium) per flow direction, deduplicated via the new
+  dedup flags, with evidence text stating the specific reject reason (too
+  short, unrecognized ROSCTR, truncated Ack, truncated Ack_Data, or
+  declared-vs-available byte counts). The `Some(0x72)` (S7comm-plus) and
+  unrecognized/`None`
+  `protocol_id` branches remain panic-free structural no-ops; their observable
+  behavior is STORY-190's scope. Includes a `#[cfg(kani)]` VP-051
+  bounds-safety skeleton and a VP-053 dispatch-totality proptest (runs under
+  `cargo test`; the full non-vacuous VP-051 Kani run (both harnesses,
+  `--fail-uncoverable`, deliberate-flip check) and the full VP-053 obligation
+  are deferred to STORY-194).
+
+### Fixed
+
+- S7comm: corrected the `MAX_S7_ISO_ON_TCP_CARRY_BYTES` doc comment
+  (`src/analyzer/s7comm.rs`), which incorrectly claimed a residual of exactly
+  65,535 bytes from a still-incomplete frame was reachable via `on_data`. Under
+  walk-first framing (BC-2.20.013), a fully-available `length = 65,535` frame is
+  extracted as complete rather than stashed to carry, so the maximum carry
+  residual reachable via real traffic is 65,534 bytes; the carry-overflow guard
+  is defense-in-depth against a future design regression, not a live detection
+  path (BC-2.20.014 v1.2 Invariant 1 / EC-001 / EC-006). Added live near-bound
+  carry reassembly tests and relabeled the existing at-bound (65,535) carry test
+  as synthetic direct-field-injection, matching its actual reachability
+  (FIX-STORY186-ATBOUND-RELABEL).
 
 ## [0.13.3] - 2026-09-05
 
