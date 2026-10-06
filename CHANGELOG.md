@@ -7,6 +7,137 @@ Version numbers follow [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- S7comm ISO-on-TCP framing groundwork: `parse_tpkt_header` in the new
+  `src/analyzer/iso_on_tcp.rs` module parses the 4-byte RFC 1006 TPKT header
+  (version byte, big-endian `u16` total length), returning `None` for
+  under-length input, a non-`0x03` version byte (checked before length decode,
+  the SS-20 resync anchor), or a decoded length below RFC 1006 §6's stated
+  minimum packet length of 7 (4-byte TPKT header + 3-byte minimum COTP) —
+  accept range is `[7, 65535]` (BC-2.20.001-004, STORY-184, ADR-014). This is
+  a standalone, protocol-agnostic pure-core free function — no
+  `StreamAnalyzer` impl, no per-flow state — laying the framing groundwork
+  consumed by the COTP header parser below (STORY-185) ahead of the
+  S7comm PDU dissector (STORY-186). Includes a `#[cfg(kani)]` no-panic
+  safety proof harness (VP-048; execution deferred to STORY-194).
+- COTP (ISO 8073 / ITU-T X.224) TPDU header parsing: `parse_cotp_header` in
+  `src/analyzer/iso_on_tcp.rs` parses the COTP Length-Indicator-prefixed TPDU
+  header from the TPKT payload, classifying Connect Request, Connect Confirm,
+  and Data Transfer TPDUs by TPDU-code high nibble and extracting the
+  verbatim, uninterpreted upper-layer protocol-ID byte from Data Transfer
+  payloads — returning `None` for under-length input, a truncated
+  Length-Indicator-declared header, or an unrecognized TPDU-code high nibble
+  (BC-2.20.005-012, STORY-185, ADR-014). Continues the standalone,
+  protocol-agnostic pure-core free-function design established in STORY-184 —
+  no S7comm-specific interpretation of the extracted protocol-ID byte.
+  Includes a `#[cfg(kani)]` no-panic safety proof harness (VP-049; execution
+  deferred to STORY-194).
+- `S7commAnalyzer` (SS-21, `src/analyzer/s7comm.rs`, new module): the
+  effectful shell built on SS-20's stateless TPKT/COTP parsing library,
+  proving directional carry-buffer TPKT reassembly across TCP segment
+  boundaries. `S7commFlowState` holds the per-flow `carry_c2s`/`carry_s2c`
+  buffers (never merged) plus per-direction overflow-reported latches.
+  `on_data` implements walk-first, residual-bound frame extraction: it
+  appends incoming bytes to the directional carry, repeatedly calls
+  `iso_on_tcp::parse_tpkt_header`/`parse_cotp_header` to extract and dispatch
+  complete frames, advances the cursor, and stashes only the leftover
+  partial-frame residual back to carry — never an aggregate
+  `carry.len() + data.len()` pre-check (BC-2.20.013, STORY-186, ADR-014
+  Decision 8). A bad TPKT version byte triggers the shared 1-byte resync
+  sub-routine (BC-2.20.015), reused verbatim for both an ordinary mid-stream
+  reject and post-overflow resync. The residual carry is bounded by
+  `MAX_S7_ISO_ON_TCP_CARRY_BYTES = 65,535` (derived from TPKT's own `u16`
+  length maximum); exceeding it clears the carry and emits one T0814 finding
+  per direction (BC-2.20.014) — retained as a defense-in-depth guard against
+  future design regressions, since it is unreachable via `on_data` under the
+  current walk-first/resync design (BC-2.20.014 v1.1 Invariant 5).
+  `on_flow_close` removes a flow's `S7commFlowState` and discards any
+  carry bytes with no finding emitted (BC-2.21.003). Protocol-specific
+  dispatch on the extracted `protocol_id` is out of scope for this story
+  (STORY-187).
+- S7comm classic (`0x32`) header parsing and four-way `protocol_id` dispatch
+  (`src/analyzer/s7comm.rs`, STORY-187, ADR-014 Decisions 2/9): `S7commFlowState`
+  gains `session_established`, `cr_observed_dir: Option<Direction>`,
+  `classified_protocol: Option<S7Protocol>`, and the
+  `malformed_header_reported_c2s`/`_s2c` dedup flags (BC-2.21.001). `on_data`'s
+  frame dispatch now branches on `CotpHeader::protocol_id` (BC-2.21.002): a
+  Connect Request (CR) records the pending direction, and a Connect Confirm (CC)
+  marks `session_established` only when observed in the direction OPPOSITE a
+  previously-recorded CR on the same flow — a bare CR, a CC with no prior CR, an
+  out-of-order CC, and a same-direction CC all leave it `false`. The first Data
+  Transfer (DT) frame carrying a `Some(byte)` `protocol_id` sets
+  `classified_protocol` exactly once (`Some(0x32)` -> `Classic`, `Some(0x72)` ->
+  `Plus`, any other `Some(byte)` -> `Unclassified`), sticky for the life of the
+  flow; a `protocol_id: None` DT frame carries no protocol evidence and never
+  classifies, deferring classification to a later `Some(byte)` DT frame if any.
+  A new pure-core free function, `parse_s7comm_header`, extracts the classic
+  S7comm common header (ROSCTR, PDU reference, parameter/data length,
+  big-endian `u16` fields) for Job/Userdata ROSCTR values (10-byte header), and
+  the 12-byte Ack/Ack_Data extension (error class/code) for BOTH the Ack AND
+  Ack_Data ROSCTR values (2026-09-24 canonical-frame holdout ruling,
+  DF-CANONICAL-FRAME-HOLDOUT-001 — a real-world Ack_Data/Setup-Communication-
+  response parameter block only aligns at byte 12, not byte 10) — returning
+  `None` for under-length input, a defensively-rechecked non-`0x32`
+  protocol-ID byte, an unrecognized ROSCTR byte, or a truncated Ack/Ack_Data
+  (BC-2.21.004-008). Classic dissection (`parse_s7comm_header` call) fires only
+  when the current DT frame's `protocol_id == Some(0x32)` AND the flow's
+  STICKY `classified_protocol == Some(Classic)` — a flow already
+  sticky-classified `Plus`/`Unclassified` by an earlier DT frame is never
+  dissected, even on a later `0x32`-leading frame, per ADR-014 Decision 2's
+  no-misattribution guarantee. The declared `param_length`/`data_length` are
+  bounds-checked against the bytes actually available via a new pure,
+  public (`pub fn`) helper, `s7comm_bounds_ok(header: &S7commHeader, data_len:
+  usize) -> bool` (BC-2.21.009), before any parameter/data-block slice is
+  attempted — the same helper the VP-051 Kani harness calls directly.
+  Malformed-header conditions (parse failure or bounds-check failure) emit one
+  T0814 (Anomaly/Possible/Medium) per flow direction, deduplicated via the new
+  dedup flags, with evidence text stating the specific reject reason (too
+  short, unrecognized ROSCTR, truncated Ack, truncated Ack_Data, or
+  declared-vs-available byte counts). The `Some(0x72)` (S7comm-plus) and
+  unrecognized/`None`
+  `protocol_id` branches remain panic-free structural no-ops; their observable
+  behavior is STORY-190's scope. Includes a `#[cfg(kani)]` VP-051
+  bounds-safety skeleton and a VP-053 dispatch-totality proptest (runs under
+  `cargo test`; the full non-vacuous VP-051 Kani run (both harnesses,
+  `--fail-uncoverable`, deliberate-flip check) and the full VP-053 obligation
+  are deferred to STORY-194).
+
+### Fixed
+
+- S7comm: corrected the `MAX_S7_ISO_ON_TCP_CARRY_BYTES` doc comment
+  (`src/analyzer/s7comm.rs`), which incorrectly claimed a residual of exactly
+  65,535 bytes from a still-incomplete frame was reachable via `on_data`. Under
+  walk-first framing (BC-2.20.013), a fully-available `length = 65,535` frame is
+  extracted as complete rather than stashed to carry, so the maximum carry
+  residual reachable via real traffic is 65,534 bytes; the carry-overflow guard
+  is defense-in-depth against a future design regression, not a live detection
+  path (BC-2.20.014 v1.2 Invariant 1 / EC-001 / EC-006). Added live near-bound
+  carry reassembly tests and relabeled the existing at-bound (65,535) carry test
+  as synthetic direct-field-injection, matching its actual reachability
+  (FIX-STORY186-ATBOUND-RELABEL).
+
+## [0.13.3] - 2026-09-05
+
+### Changed
+
+- Replace `Vec::drain(..).collect()` with `std::mem::take` in IEC-104 carry-buffer
+  handling (`src/analyzer/iec104.rs`) to satisfy `clippy::drain_collect` under the
+  rolled stable toolchain (rustc/clippy 1.98.1) — restores green CI for all PRs
+  (gate-fix, precedent #439).
+- `bin/check-green-doc-tense`: extend the DF-GREEN-DOC-TENSE-SWEEP scan glob to
+  include `bin/*.py` (in addition to `tests/*.rs`, `src/**/*.rs`, and `src/*.rs`)
+  and make `#`-prefixed Python comment lines scan-eligible (language-scoped via a
+  new `_is_comment_line(stripped, suffix)` parameter), closing the gap where stale
+  RED-phase prose in Python tooling scripts was silently skipped by the gate
+  (PG-W84-010). Add 8 new TIER-1 behavioral-absence violation patterns (30-37 —
+  `Expected RED:`, `currently fall(s)`, `currently asserts`, `falls to the
+  wildcard`, `does not / doesn't exist yet`, `currently has NO`, `currently
+  satisfied by`, `will be GREEN currently`) per DF-GREEN-DOC-TENSE-SWEEP v6,
+  covering the `currently asserts` phrasing class found in 9 stale sites during
+  STORY-180 adversarial review (PG-W85-003). `_collect_rust_files` renamed to
+  `_collect_source_files` to reflect the multi-language scan surface (STORY-183).
+
 ## [0.13.2] - 2026-07-25
 
 ### Changed
@@ -1885,7 +2016,8 @@ Downstream consumers of wirerust JSON or CSV output must update for this release
 - Output sanitization in the terminal reporter guards against C1 control bytes
   in packet-derived strings.
 
-[Unreleased]: https://github.com/Zious11/wirerust/compare/v0.13.2...HEAD
+[Unreleased]: https://github.com/Zious11/wirerust/compare/v0.13.3...HEAD
+[0.13.3]: https://github.com/Zious11/wirerust/compare/v0.13.2...v0.13.3
 [0.13.2]: https://github.com/Zious11/wirerust/compare/v0.13.1...v0.13.2
 [0.13.1]: https://github.com/Zious11/wirerust/compare/v0.13.0...v0.13.1
 [0.13.0]: https://github.com/Zious11/wirerust/compare/v0.12.1...v0.13.0

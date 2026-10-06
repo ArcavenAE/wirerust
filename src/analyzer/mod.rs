@@ -17,7 +17,9 @@ pub mod dns;
 pub mod enip;
 pub mod http;
 pub mod iec104;
+pub mod iso_on_tcp;
 pub mod modbus;
+pub mod s7comm;
 pub mod tls;
 
 use std::collections::BTreeMap;
